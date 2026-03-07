@@ -1,0 +1,267 @@
+/* Обёртка редактора — граница вокруг тулбара + контента */
+.richtext {
+  border: 1px solid var(--ui-border);
+  border-radius: 0.375rem;
+}
+
+.richtext:focus-within {
+  border-color: var(--ui-border-accented);
+}
+
+/* Редактор */
+.richtext :global(.tiptap) {
+  min-height: 120px;
+  outline: none;
+  position: relative;
+  padding: 0.75rem 0.75rem 0.75rem 2rem;
+}
+
+/* Placeholder — обрабатывается через Placeholder extension + общие стили ниже */
+
+/* ── Таблицы ── */
+.richtext :global(.tiptap) table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0;
+  overflow: visible;
+}
+
+.richtext :global(.tiptap .tableWrapper) {
+  margin: 0.5rem 0;
+  overflow: visible;
+  padding-top: 20px;
+}
+
+/* Ячейки — NodeView рендерит .table-cell-view как th/td */
+.richtext :global(.tiptap .table-cell-view) {
+  border: 1px solid var(--ui-border);
+  box-sizing: border-box;
+  padding: 6px 8px;
+  min-width: 1em;
+  position: relative;
+  vertical-align: top;
+}
+
+.richtext :global(.tiptap th.table-cell-view) {
+  background: var(--ui-bg-elevated);
+  border-color: var(--ui-border-accented);
+  font-weight: 600;
+  text-align: left;
+}
+
+.richtext :global(.tiptap .selectedCell)::after {
+  background: color-mix(in srgb, var(--ui-primary) 15%, transparent);
+  content: '';
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.richtext :global(.tiptap .column-resize-handle) {
+  background-color: var(--ui-primary);
+  bottom: -2px;
+  pointer-events: none;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+}
+
+.richtext :global(.tiptap.resize-cursor) {
+  cursor: col-resize;
+}
+
+/* ── Table handler — col-handler (точка сверху ячейки) ── */
+.richtext :global(.col-handler) {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+/* ── Table handler — row-handler (точка слева от ячейки) ── */
+.richtext :global(.row-handler) {
+  position: absolute;
+  top: 50%;
+  left: -22px;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+/* Кнопка-точка (общие стили) */
+.richtext :global(.handler-dot) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+  opacity: 1;
+  transition: background 0.15s, color 0.15s;
+}
+
+.richtext :global(.handler-dot:hover) {
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text);
+}
+
+/* Скрываем row-handler у всех ячеек кроме первой в строке */
+.richtext :global(.tiptap th:not(:first-child) .row-handler),
+.richtext :global(.tiptap td:not(:first-child) .row-handler) {
+  display: none;
+}
+
+
+
+/* ── Изображения ── */
+.richtext :global(.tiptap) img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Контейнер resize (data-атрибуты TipTap ResizableNodeView) */
+.richtext :global(.tiptap) [data-resize-container] {
+  display: inline-block;
+  line-height: 0;
+}
+
+/* Ручки resize — по умолчанию скрыты, видны при hover */
+.richtext :global(.tiptap) [data-resize-handle] {
+  width: 10px;
+  height: 10px;
+  background: var(--ui-primary);
+  border: 1.5px solid var(--ui-bg);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 5;
+}
+
+.richtext :global(.tiptap) [data-resize-container]:hover [data-resize-handle] {
+  opacity: 1;
+}
+
+/* Курсоры для угловых ручек */
+.richtext :global(.tiptap) [data-resize-handle="top-left"] {
+  cursor: nwse-resize;
+}
+
+.richtext :global(.tiptap) [data-resize-handle="top-right"] {
+  cursor: nesw-resize;
+}
+
+.richtext :global(.tiptap) [data-resize-handle="bottom-left"] {
+  cursor: nesw-resize;
+}
+
+.richtext :global(.tiptap) [data-resize-handle="bottom-right"] {
+  cursor: nwse-resize;
+}
+
+/* ── Task List ── */
+.richtext :global(.tiptap ul[data-type="taskList"]) {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.5rem 0;
+}
+
+.richtext :global(.tiptap ul[data-type="taskList"] li) {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+}
+
+.richtext :global(.tiptap ul[data-type="taskList"] li label) {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.richtext :global(.tiptap ul[data-type="taskList"] li label input[type="checkbox"]) {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--ui-primary);
+  cursor: pointer;
+}
+
+.richtext :global(.tiptap ul[data-type="taskList"] li div) {
+  flex: 1;
+  min-width: 0;
+}
+
+.richtext :global(.tiptap ul[data-type="taskList"] li[data-checked="true"] div) {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Вложенные task lists */
+.richtext :global(.tiptap ul[data-type="taskList"] ul[data-type="taskList"]) {
+  padding-left: 1.5rem;
+}
+
+/* ── Placeholder (все пустые блоки) ── */
+.richtext :global(.tiptap .is-empty)::before {
+  color: var(--ui-text-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* ── Multi-column ── */
+.richtext :global(.tiptap .multi-column-content) {
+  display: flex;
+  gap: 1rem;
+}
+
+.richtext :global(.tiptap .multi-column-content > div[data-column]) {
+  flex: 1;
+  min-width: 0;
+  border: 1px dashed var(--ui-border);
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
+.richtext :global(.tiptap .multi-column-content > div[data-column]:focus-within) {
+  border-color: var(--ui-primary);
+  border-style: solid;
+}
+
+/* ── Code Block (shiki) ── */
+.richtext :global(.tiptap pre) {
+  border: 1px solid var(--ui-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.richtext :global(.tiptap pre code) {
+  background: none;
+  padding: 0;
+  border: none;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* ── Callout ── */
+.richtext :global(.tiptap .callout .callout-content > *:first-child) {
+  margin-top: 0;
+}
+
+.richtext :global(.tiptap .callout .callout-content > *:last-child) {
+  margin-bottom: 0;
+}

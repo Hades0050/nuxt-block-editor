@@ -1,0 +1,44 @@
+import { defineNuxtModule, createResolver, addComponentsDir, addImportsDir } from '@nuxt/kit'
+
+export default defineNuxtModule({
+  meta: {
+    name: 'nuxt-block-editor',
+    configKey: 'blockEditor',
+    compatibility: { nuxt: '>=4.0.0' }
+  },
+  setup(_options, nuxt) {
+    const { resolve } = createResolver(import.meta.url)
+
+    // #block-editor alias → model directory
+    nuxt.options.alias['#block-editor'] = resolve('./model')
+
+    // Предотвращаем дублирование prosemirror-классов (DecorationSet и др.)
+    // @tiptap/extension-table исключаем из pre-bundling чтобы Vite не инлайнил prosemirror-view
+    nuxt.options.vite ??= {}
+    nuxt.options.vite.optimizeDeps ??= {}
+    nuxt.options.vite.optimizeDeps.exclude ??= []
+    ;(nuxt.options.vite.optimizeDeps.exclude as string[]).push(
+      '@tiptap/extension-table',
+      '@tiptap/extension-image',
+      '@tiptap/extension-list'
+    )
+    nuxt.options.vite.optimizeDeps.include ??= []
+    ;(nuxt.options.vite.optimizeDeps.include as string[]).push(
+      'prosemirror-view',
+      'prosemirror-state',
+      'prosemirror-model',
+      'prosemirror-tables',
+      'prosemirror-transform'
+    )
+
+    // Auto-register components with BlockEditor prefix
+    addComponentsDir({
+      path: resolve('./runtime/components/block-editor'),
+      prefix: 'BlockEditor',
+      pathPrefix: true
+    })
+
+    // Auto-import composables
+    addImportsDir(resolve('./runtime/composables'))
+  }
+})

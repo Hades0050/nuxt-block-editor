@@ -11,12 +11,12 @@ import { computed, watchEffect, onBeforeUnmount, type WritableComputedRef } from
  */
 export function useBoxModel<T>(
   getter: () => T,
-  emit: (event: 'update', updates: Partial<Box>) => void,
+  emit: (event: 'update', updates: Record<string, unknown>) => void,
   key: string
 ): WritableComputedRef<T> {
   return computed({
     get: () => getter(),
-    set: (v: T) => emit('update', { [key]: v } as Partial<Box>)
+    set: (v: T) => emit('update', { [key]: v })
   })
 }
 
@@ -27,9 +27,9 @@ export function useBoxModel<T>(
  */
 export function useBoxChange(
   getBox: () => Box,
-  emit: (event: 'update', updates: Partial<Box>) => void
+  emit: (event: 'update', updates: Record<string, unknown>) => void
 ) {
-  const notify = () => emit('update', {} as Partial<Box>)
+  const notify = () => emit('update', {})
   watchEffect(() => {
     getBox().bindChange(notify)
   })

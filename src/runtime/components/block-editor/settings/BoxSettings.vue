@@ -25,7 +25,7 @@ const extraUpdates = ref<Record<string, unknown>>({})
 const extraTab = computed(() => boxSettingsMap[props.box.name_type])
 
 const tabItems = computed(() => {
-  const items = [{ label: t('settings.general'), value: 'general', slot: 'general' as const }]
+  const items: { label: string; value: string; slot: string }[] = [{ label: t('settings.general'), value: 'general', slot: 'general' }]
   if (extraTab.value) {
     items.push({ label: extraTab.value.label, value: extraTab.value.slot, slot: extraTab.value.slot })
   }

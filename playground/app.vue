@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { Content, type BoxType, type EditorMode, collectData, findDuplicateBindingKeys } from '#block-editor'
+import { Content, boxFactory, type BoxType, type EditorMode, collectData, findDuplicateBindingKeys } from '#block-editor'
 import { LOCALE_KEY, type LocaleCode } from '../src/runtime/composables/useEditorI18n'
+import { DEMO_BOXES, DEMO_TEMPLATE_DATA } from './demo-content'
 import { createHighlighter, type Highlighter } from 'shiki'
-import { shallowRef, ref, computed, watch, provide, triggerRef } from 'vue'
+import { shallowRef, ref, computed, watch, onMounted, provide, triggerRef } from 'vue'
+
+function buildDemoContent(): Content {
+  return Content.fromJsonString(JSON.stringify(DEMO_BOXES), boxFactory)
+}
 
 const content = shallowRef(new Content())
 const mode = ref<EditorMode>('edit')
@@ -28,8 +33,23 @@ const collectedData = computed(() => collectData(content.value))
 const dataJson = computed(() => JSON.stringify(collectedData.value, null, 2))
 const duplicateKeys = computed(() => findDuplicateBindingKeys(content.value))
 const highlightedData = ref('')
+
+// Литерал для подписи: `{{key}}` прямо в шаблоне съест компилятор Vue
+const KEY_EXAMPLE = '{{key}}'
+
+// Единый источник входных данных: и prop `data` для mustache-шаблонов, и вход для insertData
 const dataInput = ref('')
-const dataError = ref('')
+const dataParsed = computed(() => {
+  if (!dataInput.value.trim()) return { data: {} as Record<string, unknown>, error: '' }
+  try {
+    return { data: JSON.parse(dataInput.value) as Record<string, unknown>, error: '' }
+  }
+  catch {
+    return { data: {} as Record<string, unknown>, error: 'Invalid JSON' }
+  }
+})
+const templateData = computed(() => dataParsed.value.data)
+const dataError = computed(() => dataParsed.value.error)
 
 async function ensureHighlighter() {
   if (!highlighter.value) {
@@ -48,6 +68,13 @@ async function highlightAll() {
 }
 
 watch(content, () => highlightAll(), { deep: true })
+onMounted(() => highlightAll())
+
+function loadDemo() {
+  content.value = buildDemoContent()
+  dataInput.value = DEMO_TEMPLATE_DATA
+  triggerRef(content)
+}
 
 function handleContentUpdate(val: Content) {
   content.value = val
@@ -56,18 +83,11 @@ function handleContentUpdate(val: Content) {
 
 function handleCollect() {
   dataInput.value = dataJson.value
-  dataError.value = ''
 }
 
 function handleInsert() {
-  try {
-    const data = JSON.parse(dataInput.value)
-    editorRef.value?.insertData(data)
-    dataError.value = ''
-  }
-  catch {
-    dataError.value = 'Invalid JSON'
-  }
+  if (dataError.value) return
+  editorRef.value?.insertData(dataParsed.value.data)
 }
 </script>
 
@@ -113,6 +133,14 @@ function handleInsert() {
           </div>
           <USeparator orientation="vertical" class="h-5" />
           <UButton
+            label="Demo"
+            icon="i-lucide-sparkles"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            @click="loadDemo"
+          />
+          <UButton
             :label="locale === 'en' ? 'EN' : 'RU'"
             icon="i-lucide-languages"
             color="neutral"
@@ -140,6 +168,7 @@ function handleInsert() {
               :content="content"
               :mode="mode"
               :locale="locale"
+              :data="templateData"
               @update:content="handleContentUpdate"
             />
           </div>
@@ -180,9 +209,9 @@ function handleInsert() {
               v-html="highlightedData"
             />
 
-            <!-- Input area -->
+            <!-- Input area — единый источник: prop `data` + вход для insertData -->
             <div class="flex items-center gap-2 mb-2">
-              <h3 class="text-xs font-semibold text-muted">Insert Data</h3>
+              <h3 class="text-xs font-semibold text-muted">Input Data</h3>
               <div class="flex-1" />
               <UButton
                 label="Collect"
@@ -197,17 +226,22 @@ function handleInsert() {
                 icon="i-lucide-arrow-up"
                 color="primary"
                 size="xs"
-                :disabled="!dataInput.trim()"
+                :disabled="!dataInput.trim() || !!dataError"
                 @click="handleInsert"
               />
             </div>
+            <p class="text-xs text-muted mb-2">
+              Уходит в prop <code>data</code> у &lt;BlockEditor&gt; — источник ключей для шаблонов
+              <code>{{ KEY_EXAMPLE }}</code>. Кнопка Insert раскладывает тот же JSON по полям форм.
+              Поля формы с тем же <code>bindingKey</code> перекрывают эти значения.
+            </p>
             <UTextarea
               v-model="dataInput"
               autoresize
               placeholder='{"key": "value"}'
               :color="dataError ? 'error' : undefined"
               class="w-full text-xs font-mono"
-              :rows="4"
+              :rows="6"
             />
             <p v-if="dataError" class="text-xs text-error mt-1">{{ dataError }}</p>
           </div>

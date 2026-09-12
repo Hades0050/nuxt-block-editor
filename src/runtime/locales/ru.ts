@@ -29,6 +29,8 @@ export default {
     addTab: 'Добавить вкладку',
     addNode: 'Добавить узел',
     toggleTreeMode: 'Переключить режим дерева',
+    previewOn: 'Показать подставленные значения',
+    previewOff: 'Показать ключи шаблона',
     settings: 'Настройки',
     delete: 'Удалить блок',
     drag: 'Перетащите для перемещения',
@@ -139,6 +141,13 @@ export default {
     horizontalRule: 'Разделитель',
     horizontalRuleDesc: 'Горизонтальная линия',
     noResults: 'Ничего не найдено'
+  },
+
+  templateVars: {
+    value: 'Значение',
+    section: 'Цикл / условие',
+    inside: 'внутри',
+    empty: 'Нет доступных данных'
   },
 
   tree: {

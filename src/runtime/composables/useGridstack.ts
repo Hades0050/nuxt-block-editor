@@ -162,16 +162,27 @@ export function useGridstack(
       observeItemChild(item)
     }
 
-    // MutationObserver for childList (new/removed widgets)
+    // MutationObserver for childList (new/removed widgets).
+    // Боксы, появившиеся в DOM мимо handleAdd (замена всего content после mount),
+    // gridstack не знает — их нужно зарегистрировать, иначе элемент остаётся
+    // без раскладки: ширина в одну колонку, высота в одну ячейку.
+    // Фильтр по gs-id отсекает служебный placeholder — у него класс тот же.
     mutationObserver = new MutationObserver((mutations) => {
       for (const m of mutations) {
-        if (m.type === 'childList') {
-          m.addedNodes.forEach(node => {
-            if (node instanceof HTMLElement && node.classList.contains('grid-stack-item')) {
-              observeItemChild(node)
-            }
-          })
-        }
+        if (m.type !== 'childList') continue
+
+        m.removedNodes.forEach(node => {
+          if (!(node instanceof HTMLElement) || !node.getAttribute('gs-id')) return
+          if (grid && (node as any).gridstackNode) grid.removeWidget(node, false)
+        })
+
+        m.addedNodes.forEach(node => {
+          if (!(node instanceof HTMLElement) || !node.classList.contains('grid-stack-item')) return
+          if (grid && node.getAttribute('gs-id') && !(node as any).gridstackNode) {
+            grid.makeWidget(node)
+          }
+          observeItemChild(node)
+        })
       }
       scheduleResizeAll()
     })

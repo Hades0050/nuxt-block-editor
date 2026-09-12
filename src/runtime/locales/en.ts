@@ -29,6 +29,8 @@ export default {
     addTab: 'Add tab',
     addNode: 'Add node',
     toggleTreeMode: 'Toggle tree display mode',
+    previewOn: 'Show substituted values',
+    previewOff: 'Show template keys',
     settings: 'Settings',
     delete: 'Delete block',
     drag: 'Drag to reorder',
@@ -139,6 +141,13 @@ export default {
     horizontalRule: 'Horizontal Rule',
     horizontalRuleDesc: 'Divider line',
     noResults: 'No results'
+  },
+
+  templateVars: {
+    value: 'Value',
+    section: 'Loop / condition',
+    inside: 'inside',
+    empty: 'No data available'
   },
 
   tree: {

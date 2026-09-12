@@ -19,6 +19,7 @@
     "@nuxt/kit": "^4.3.1",
     "@tiptap/extension-table": "^3.20.0",
     "konva": "^10.2.0",
+    "mustache": "^4.2.0",
     "shiki": "^3.22.0",
     "tiptap-extension-code-block-shiki": "^1.0.0",
     "vue-konva": "^3.3.0"
@@ -44,6 +45,7 @@
     "@tiptap/extension-text-align": "^3.19.0",
     "@tiptap/extension-text-style": "^3.20.0",
     "@tiptap/extension-underline": "^3.19.0",
+    "@types/mustache": "^4.2.6",
     "gridstack": "^12.4.2",
     "happy-dom": "^20.6.1",
     "nuxt": "^4.3.1",

@@ -8,7 +8,8 @@ import CodeBlockShiki from 'tiptap-extension-code-block-shiki'
 import { CustomTableHeader, CustomTableCell } from './table/table-extensions'
 import { Callout } from './callout/callout-extension'
 import { Column, MultiColumn } from './multi-column/multi-column-extension'
-import { SlashCommands } from './slash-commands/slash-commands'
+import { SlashCommands } from './table/slash-commands/slash-commands'
+import { TemplateVars } from './template-vars/template-vars-extension'
 
 /**
  * Shared TipTap extensions for rich text editors.
@@ -32,5 +33,6 @@ export const editorExtensions = [
   Callout,
   Column,
   MultiColumn,
-  SlashCommands
+  SlashCommands,
+  TemplateVars
 ]

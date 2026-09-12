@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import type { SlashCommandItem } from './slash-commands'
 import type { Editor, Range } from '@tiptap/core'
-import { useEditorI18n } from '../../../../../../composables/useEditorI18n'
+import { useEditorI18n } from '../../../../../../../composables/useEditorI18n'
 
 const props = defineProps<{
   items: SlashCommandItem[]

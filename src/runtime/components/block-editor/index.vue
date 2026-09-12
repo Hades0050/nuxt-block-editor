@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import type { BoxType, Box, EditorMode } from '#block-editor'
-import { Content, collectData, insertData, findDuplicateBindingKeys, boxFactory } from '#block-editor'
+import { Content, collectData, insertData, findDuplicateBindingKeys, boxFactory, TemplateDataSource } from '#block-editor'
 import { provide, inject, nextTick, ref, computed, watch, toRef, onUnmounted } from 'vue'
 import { useBlockEditor } from '../../composables/useBlockEditor'
 import { useGridstack, RESIZE_PARENT_KEY } from '../../composables/useGridstack'
 import { LOCALE_KEY, useEditorI18n, type LocaleCode } from '../../composables/useEditorI18n'
+import { provideTemplateData } from '../../composables/useTemplateData'
 
 const props = withDefaults(defineProps<{
   content: Content
   mode?: EditorMode
   nested?: boolean
   locale?: LocaleCode
+  data?: Record<string, unknown>
 }>(), {
   mode: 'edit',
   nested: false,
@@ -31,6 +33,12 @@ const emit = defineEmits<{
 }>()
 
 const { content, addBox, removeBox, updateBox, syncPositions } = useBlockEditor(props.content)
+
+// Provide template data only from root editor — nested content is part of the same Content,
+// so its fields are already in collectData. Form values win over the incoming data prop.
+if (!props.nested) {
+  provideTemplateData(computed(() => TemplateDataSource.from(props.data, collectData(content.value))))
+}
 
 // Sync incoming prop changes
 watch(() => props.content, (val) => {

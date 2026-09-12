@@ -11,5 +11,8 @@ export * from './boxes'
 export * from './content'
 export * from './factory'
 
+// Templates
+export * from './template'
+
 // Utils
 export { collectData, insertData, findDuplicateBindingKeys } from './utils/dataBinding'

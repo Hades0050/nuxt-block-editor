@@ -265,3 +265,45 @@
 .richtext :global(.tiptap .callout .callout-content > *:last-child) {
   margin-bottom: 0;
 }
+
+/* ── Mustache-токены ── */
+.richtext :global(.tiptap .tpl-token) {
+  border-radius: 0.25rem;
+  padding: 0 0.125rem;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.9em;
+  background-color: var(--ui-color-primary-100);
+  color: var(--ui-color-primary-700);
+}
+
+.richtext :global(.tiptap .tpl-token--open),
+.richtext :global(.tiptap .tpl-token--inverted),
+.richtext :global(.tiptap .tpl-token--close) {
+  background-color: var(--ui-color-secondary-100);
+  color: var(--ui-color-secondary-700);
+  font-weight: 600;
+}
+
+.richtext :global(.tiptap .tpl-token--unknown) {
+  background-color: var(--ui-color-warning-100);
+  color: var(--ui-color-warning-700);
+  text-decoration: underline wavy currentcolor;
+  text-underline-offset: 0.2em;
+}
+
+:global(.dark) .richtext :global(.tiptap .tpl-token) {
+  background-color: var(--ui-color-primary-950);
+  color: var(--ui-color-primary-300);
+}
+
+:global(.dark) .richtext :global(.tiptap .tpl-token--open),
+:global(.dark) .richtext :global(.tiptap .tpl-token--inverted),
+:global(.dark) .richtext :global(.tiptap .tpl-token--close) {
+  background-color: var(--ui-color-secondary-950);
+  color: var(--ui-color-secondary-300);
+}
+
+:global(.dark) .richtext :global(.tiptap .tpl-token--unknown) {
+  background-color: var(--ui-color-warning-950);
+  color: var(--ui-color-warning-300);
+}

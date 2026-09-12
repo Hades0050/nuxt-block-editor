@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BoxFields, BoxTabs, BoxTree } from '#block-editor'
+import { BoxFields, BoxTabs, BoxTree, BOX_TYPES } from '#block-editor'
 import type { Box, EditorMode } from '#block-editor'
 import { computed, ref } from 'vue'
 import { useEditorI18n } from '../../composables/useEditorI18n'
@@ -27,6 +27,15 @@ function saveSettings(updates: Partial<Box>) {
 
 const hasTitle = computed(() => !!props.box.title && props.box.title !== '<p></p>')
 const hasSubtitle = computed(() => !!props.box.subtitle && props.box.subtitle !== '<p></p>')
+
+// Превью mustache-шаблонов — только у текстовых боксов и только если в них есть {{
+const previewOpen = ref(false)
+const isTemplateBox = computed(() =>
+  props.box.name_type === BOX_TYPES.TEXT || props.box.name_type === BOX_TYPES.MARKDOWN
+)
+const hasTemplate = computed(() =>
+  isTemplateBox.value && typeof props.box.value === 'string' && props.box.value.includes('{{')
+)
 
 const hasAddField = computed(() => props.box instanceof BoxFields)
 const hasAddTab = computed(() => props.box instanceof BoxTabs)
@@ -105,6 +114,15 @@ function handleBoxUpdate(updates: Partial<Box>) {
           @click="handleToggleTreeDisplayMode"
         />
       </UTooltip>
+      <UTooltip v-if="hasTemplate" :text="previewOpen ? t('container.previewOff') : t('container.previewOn')">
+        <UButton
+          :icon="previewOpen ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+          :color="previewOpen ? 'primary' : 'neutral'"
+          variant="ghost"
+          size="xs"
+          @click="previewOpen = !previewOpen"
+        />
+      </UTooltip>
       <UTooltip :text="t('container.settings')">
         <UButton
           icon="i-lucide-settings"
@@ -137,6 +155,7 @@ function handleBoxUpdate(updates: Partial<Box>) {
         :is="boxComponentMap[box.name_type]"
         :box="box"
         :mode="mode"
+        v-bind="isTemplateBox ? { preview: previewOpen } : {}"
         @update="handleBoxUpdate"
       />
     </div>

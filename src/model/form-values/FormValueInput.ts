@@ -16,8 +16,4 @@ export class FormValueInput extends FormValue {
       value: this.value
     }
   }
-
-  static from(raw: Record<string, unknown>): FormValueInput {
-    return new FormValueInput(raw as Partial<FormValueInput>)
-  }
 }

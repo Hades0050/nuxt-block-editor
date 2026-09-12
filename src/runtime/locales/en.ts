@@ -221,8 +221,6 @@ export default {
   },
 
   placeholder: {
-    heading: 'Heading',
-    typeSlash: 'Type "/" for commands...',
     enterText: 'Enter text...',
     empty: 'Empty'
   }

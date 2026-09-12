@@ -4,16 +4,11 @@ import { BOX_TYPES } from '../types/box-types'
 /** Блок загрузки файла */
 export class BoxFile extends Box<string | null> {
   public readonly name_type = BOX_TYPES.FILE
-  public value: string | null
-  public fileName: string | null
-  public applicationType: string
+  declare public value: string | null
+  declare public fileName: string | null
+  declare public applicationType: string
 
-  constructor(data?: Partial<Record<string, unknown>>) {
-    super(data)
-    this.value = (data?.value as string | null) ?? null
-    this.fileName = (data?.fileName as string | null) ?? null
-    this.applicationType = (data?.applicationType as string) ?? ''
-  }
+  protected static override readonly extras = { value: null, fileName: null, applicationType: '' }
 
   setFile(url: string, name: string, type: string): void {
     this.value = url
@@ -27,13 +22,5 @@ export class BoxFile extends Box<string | null> {
     this.fileName = null
     this.applicationType = ''
     this.emitChange()
-  }
-
-  override toJSON(): Record<string, unknown> {
-    return {
-      ...super.toJSON(),
-      fileName: this.fileName,
-      applicationType: this.applicationType
-    }
   }
 }

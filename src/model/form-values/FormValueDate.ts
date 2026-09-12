@@ -25,8 +25,4 @@ export class FormValueDate extends FormValue {
       mode: this.mode
     }
   }
-
-  static from(raw: Record<string, unknown>): FormValueDate {
-    return new FormValueDate(raw as Partial<FormValueDate>)
-  }
 }

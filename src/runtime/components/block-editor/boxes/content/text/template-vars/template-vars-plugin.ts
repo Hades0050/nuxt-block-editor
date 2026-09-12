@@ -2,7 +2,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { Node as PmNode } from '@tiptap/pm/model'
 import type { Editor } from '@tiptap/core'
-import { scanTokens, normalizeIndexPath } from '#block-editor'
+import { MustacheTemplate, TemplateDataSource } from '#block-editor'
 import type { TemplateVarsMeta } from './types'
 
 export interface TemplateVarsState {
@@ -37,12 +37,12 @@ function buildDecorations(doc: PmNode, knownPaths: Set<string>): DecorationSet {
     // всё равно матчится, а смещения остаются точными (leaf-ноды дают 1 символ)
     const text = node.textBetween(0, node.content.size, undefined, ' ')
 
-    for (const token of scanTokens(text)) {
+    for (const token of MustacheTemplate.scan(text)) {
       const classes = ['tpl-token', `tpl-token--${token.role}`]
       // индексный путь известен по образцу первого элемента: `items.3.title` ≈ `items.0.title`
       if (token.path !== '.'
         && !knownPaths.has(token.path)
-        && !knownPaths.has(normalizeIndexPath(token.path))) {
+        && !knownPaths.has(TemplateDataSource.normalizeIndexPath(token.path))) {
         classes.push('tpl-token--unknown')
       }
 

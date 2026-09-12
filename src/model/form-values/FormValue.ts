@@ -11,6 +11,19 @@ export abstract class FormValue {
   public icon: Icon
   public placeholder: string
   public bindingKey: string
+  public abstract value: unknown
+
+  /**
+   * Плоское значение для data-binding: то, что уходит в `collectData` и приходит из `insertData`.
+   * База покрывает текстовые поля, `FormValueSelect` переопределяет на `value` выбранной опции.
+   */
+  get boundValue(): unknown {
+    return this.value
+  }
+
+  set boundValue(raw: unknown) {
+    this.value = String(raw ?? '')
+  }
 
   constructor(data?: Partial<{ id: string; label: string; icon: { name?: string; color?: string }; placeholder: string; bindingKey: string }>) {
     this.id = data?.id ?? generateId('fv')

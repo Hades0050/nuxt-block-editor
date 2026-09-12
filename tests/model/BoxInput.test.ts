@@ -53,27 +53,27 @@ describe('BoxInput', () => {
     })
   })
 
-  describe('removeField', () => {
-    it('removes field by id', () => {
+  describe('removeFieldAt', () => {
+    it('removes field by index', () => {
       const box = new BoxInput()
       box.addField()
       expect(box.value).toHaveLength(2)
 
-      const idToRemove = box.value[0]!.id
-      box.removeField(idToRemove)
+      const removedId = box.value[0]!.id
+      box.removeFieldAt(0)
       expect(box.value).toHaveLength(1)
-      expect(box.value.find(f => f.id === idToRemove)).toBeUndefined()
+      expect(box.value.find(f => f.id === removedId)).toBeUndefined()
     })
 
-    it('does nothing for non-existent id', () => {
+    it('does nothing for out-of-bounds index', () => {
       const box = new BoxInput()
-      box.removeField('nonexistent')
+      box.removeFieldAt(99)
       expect(box.value).toHaveLength(1)
     })
 
     it('can remove all fields', () => {
       const box = new BoxInput()
-      box.removeField(box.value[0]!.id)
+      box.removeFieldAt(0)
       expect(box.value).toHaveLength(0)
     })
   })
@@ -91,11 +91,13 @@ describe('BoxInput', () => {
       expect(box.value[0]!.value).toBe('hello')
     })
 
-    it('updates multiple properties at once', () => {
+    it('updates multiple properties at once, мутируя поле на месте', () => {
       const box = new BoxInput()
+      const originalField = box.value[0]!
       box.updateFieldAt(0, { label: 'Name', value: 'Alice' })
       expect(box.value[0]!.label).toBe('Name')
       expect(box.value[0]!.value).toBe('Alice')
+      expect(box.value[0]).toBe(originalField)
     })
 
     it('does nothing for out-of-bounds index', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { TemplateDataSource, flattenDataPaths, normalizeIndexPath } from '#block-editor'
+import { TemplateDataSource } from '#block-editor'
 
 describe('TemplateDataSource.from', () => {
   it('is empty without sources', () => {
@@ -49,27 +49,27 @@ describe('TemplateDataSource.from', () => {
   })
 })
 
-describe('flattenDataPaths', () => {
+describe('TemplateDataSource.keys — flattening', () => {
   it('returns [] for empty data', () => {
-    expect(flattenDataPaths({})).toEqual([])
+    expect(TemplateDataSource.from({}).keys()).toEqual([])
   })
 
   it('marks primitives as values', () => {
-    expect(flattenDataPaths({ name: 'John', age: 30 })).toEqual([
+    expect(TemplateDataSource.from({ name: 'John', age: 30 }).keys()).toEqual([
       { path: 'name', kind: 'value' },
       { path: 'age', kind: 'value' },
     ])
   })
 
   it('marks objects as sections and descends into them', () => {
-    expect(flattenDataPaths({ user: { name: 'John' } })).toEqual([
+    expect(TemplateDataSource.from({ user: { name: 'John' } }).keys()).toEqual([
       { path: 'user', kind: 'section' },
       { path: 'user.name', kind: 'value' },
     ])
   })
 
   it('marks arrays as sections and exposes element keys with a scope', () => {
-    expect(flattenDataPaths({ items: [{ title: 'a', qty: 1 }] })).toEqual([
+    expect(TemplateDataSource.from({ items: [{ title: 'a', qty: 1 }] }).keys()).toEqual([
       { path: 'items', kind: 'section' },
       { path: 'title', kind: 'value', scope: 'items' },
       { path: 'qty', kind: 'value', scope: 'items' },
@@ -79,14 +79,14 @@ describe('flattenDataPaths', () => {
   })
 
   it('exposes an indexed sample for arrays of primitives', () => {
-    expect(flattenDataPaths({ tags: ['a', 'b'] })).toEqual([
+    expect(TemplateDataSource.from({ tags: ['a', 'b'] }).keys()).toEqual([
       { path: 'tags', kind: 'section' },
       { path: 'tags.0', kind: 'value' },
     ])
   })
 
   it('keeps the scope on indexed keys of a nested array', () => {
-    expect(flattenDataPaths({ items: [{ tags: ['a'] }] })).toEqual([
+    expect(TemplateDataSource.from({ items: [{ tags: ['a'] }] }).keys()).toEqual([
       { path: 'items', kind: 'section' },
       { path: 'tags', kind: 'section', scope: 'items' },
       { path: 'tags.0', kind: 'value', scope: 'items' },
@@ -96,26 +96,26 @@ describe('flattenDataPaths', () => {
   })
 
   it('does not descend into an empty array', () => {
-    expect(flattenDataPaths({ items: [] })).toEqual([
+    expect(TemplateDataSource.from({ items: [] }).keys()).toEqual([
       { path: 'items', kind: 'section' },
     ])
   })
 })
 
-describe('normalizeIndexPath', () => {
+describe('TemplateDataSource.normalizeIndexPath', () => {
   it('maps any index to zero', () => {
-    expect(normalizeIndexPath('items.3.title')).toBe('items.0.title')
-    expect(normalizeIndexPath('tags.12')).toBe('tags.0')
-    expect(normalizeIndexPath('a.1.b.2.c')).toBe('a.0.b.0.c')
+    expect(TemplateDataSource.normalizeIndexPath('items.3.title')).toBe('items.0.title')
+    expect(TemplateDataSource.normalizeIndexPath('tags.12')).toBe('tags.0')
+    expect(TemplateDataSource.normalizeIndexPath('a.1.b.2.c')).toBe('a.0.b.0.c')
   })
 
   it('leaves paths without indexes untouched', () => {
-    expect(normalizeIndexPath('user.name')).toBe('user.name')
+    expect(TemplateDataSource.normalizeIndexPath('user.name')).toBe('user.name')
   })
 
   it('does not touch digits inside a name', () => {
-    expect(normalizeIndexPath('item2.title')).toBe('item2.title')
-    expect(normalizeIndexPath('a.b2c')).toBe('a.b2c')
+    expect(TemplateDataSource.normalizeIndexPath('item2.title')).toBe('item2.title')
+    expect(TemplateDataSource.normalizeIndexPath('a.b2c')).toBe('a.b2c')
   })
 })
 

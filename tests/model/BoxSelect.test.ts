@@ -32,27 +32,12 @@ describe('BoxSelect', () => {
     expect(box.value[0]!.items).toHaveLength(2)
   })
 
-  describe('addField / removeField', () => {
+  describe('addField', () => {
     it('adds a new field', () => {
       const box = new BoxSelect()
       box.addField()
       expect(box.value).toHaveLength(2)
       expect(box.value[1]).toBeInstanceOf(FormValueSelect)
-    })
-
-    it('removes field by id', () => {
-      const box = new BoxSelect()
-      box.addField()
-      const id = box.value[0]!.id
-      box.removeField(id)
-      expect(box.value).toHaveLength(1)
-      expect(box.value.find(f => f.id === id)).toBeUndefined()
-    })
-
-    it('does nothing for non-existent id', () => {
-      const box = new BoxSelect()
-      box.removeField('nonexistent')
-      expect(box.value).toHaveLength(1)
     })
   })
 
@@ -105,22 +90,22 @@ describe('BoxSelect', () => {
     })
   })
 
-  describe('updateOptionLabel', () => {
+  describe('updateOption', () => {
     it('updates an option label', () => {
       const box = new BoxSelect()
-      box.updateOptionLabel(0, 0, 'Primary')
+      box.updateOption(0, 0, { label: 'Primary' })
       expect(box.value[0]!.items[0]!.label).toBe('Primary')
     })
 
     it('does nothing for invalid field index', () => {
       const box = new BoxSelect()
-      box.updateOptionLabel(99, 0, 'Test')
+      box.updateOption(99, 0, { label: 'Test' })
       expect(box.value[0]!.items[0]!.label).toBe('Option 1')
     })
 
     it('does nothing for invalid option index', () => {
       const box = new BoxSelect()
-      box.updateOptionLabel(0, 99, 'Test')
+      box.updateOption(0, 99, { label: 'Test' })
       expect(box.value[0]!.items[0]!.label).toBe('Option 1')
     })
   })
@@ -151,7 +136,7 @@ describe('BoxSelect', () => {
       const box = new BoxSelect()
       box.updateFieldAt(0, { label: 'Color' })
       box.addOption(0)
-      box.updateOptionLabel(0, 1, 'Green')
+      box.updateOption(0, 1, { label: 'Green' })
 
       const json = box.toJSON()
       const fields = json.value as Record<string, unknown>[]

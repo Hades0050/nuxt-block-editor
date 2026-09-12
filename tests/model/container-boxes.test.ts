@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  BoxTabs, BoxTree, BoxHtml, BoxText,
+  BoxTabs, BoxTree, BoxText,
   boxFactory, TabItem, TreeNode, Content, BOX_TYPES,
 } from '#block-editor'
 
@@ -173,34 +173,5 @@ describe('BoxTree', () => {
     box.removeNode(child.id)
     expect(box.value[0]!.children).toHaveLength(0)
     expect(box.findNode(grandchild.id)).toBeUndefined()
-  })
-})
-
-describe('BoxHtml', () => {
-  it('creates with empty content', () => {
-    const box = new BoxHtml(undefined, boxFactory)
-    expect(box.name_type).toBe(BOX_TYPES.HTML)
-    expect(box.value).toBeInstanceOf(Content)
-    expect(box.value.boxes).toHaveLength(0)
-  })
-
-  it('content methods work directly', () => {
-    const box = new BoxHtml(undefined, boxFactory)
-    const inner = new BoxText({ title: 'Child' })
-    box.value.addBox(inner)
-    expect(box.value.boxes).toHaveLength(1)
-
-    box.value.removeBox(inner.id)
-    expect(box.value.boxes).toHaveLength(0)
-  })
-
-  it('toJSON serializes nested content', () => {
-    const box = new BoxHtml(undefined, boxFactory)
-    box.value.addBox(new BoxText({ value: 'inner' }))
-
-    const json = box.toJSON()
-    const value = json.value as { boxes: Record<string, unknown>[] }
-    expect(value.boxes).toHaveLength(1)
-    expect(value.boxes[0]!.value).toBe('inner')
   })
 })

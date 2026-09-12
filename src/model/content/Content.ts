@@ -1,11 +1,10 @@
 import type { Box } from '../boxes/Box'
-import type { IContent, IBoxFactory } from '../types/interfaces'
-import { setContentClass } from '../utils/contentRef'
+import type { IBoxFactory } from '../types/interfaces'
 
 /**
  * Контейнер блоков. Хранит массив боксов и Map-индекс для O(1)-поиска по id.
  */
-export class Content implements IContent {
+export class Content {
   public boxes: Box[] = []
 
   /** Приватный индекс для O(1)-поиска по id */
@@ -104,7 +103,7 @@ export class Content implements IContent {
         ? parsed
         : Array.isArray(parsed?.boxes) ? parsed.boxes : []
       const content = new Content()
-      content._initBoxes(rawBoxes.map((raw: unknown) => factory.prepare(raw) as Box))
+      content._initBoxes(rawBoxes.map((raw: unknown) => factory.prepare(raw)))
       return content
     }
     catch {
@@ -119,12 +118,9 @@ export class Content implements IContent {
     const obj = raw as Record<string, unknown>
     if (Array.isArray(obj.boxes) && factory) {
       const content = new Content()
-      content._initBoxes((obj.boxes as unknown[]).map(b => factory.prepare(b) as Box))
+      content._initBoxes((obj.boxes as unknown[]).map(b => factory.prepare(b)))
       return content
     }
     return new Content()
   }
 }
-
-// Регистрируем Content для разрешения циклической зависимости с TabItem/TreeNode
-setContentClass(Content)

@@ -13,15 +13,19 @@ export class FormValueSelect extends FormValue {
     this.items = data?.items ?? [{ value: 'option_1', label: 'Option 1' }]
   }
 
+  override get boundValue(): string | null {
+    return this.value?.value ?? null
+  }
+
+  override set boundValue(raw: unknown) {
+    this.value = raw === null ? null : this.items.find(item => item.value === String(raw)) ?? null
+  }
+
   override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       value: this.value,
       items: this.items
     }
-  }
-
-  static from(raw: Record<string, unknown>): FormValueSelect {
-    return new FormValueSelect(raw as Partial<FormValueSelect>)
   }
 }

@@ -3,6 +3,7 @@ import type { Editor } from '@tiptap/core'
 import { ref } from 'vue'
 import { fontFamilies, fontSizes } from './toolbar-config'
 import TableGrid from './table/TableGrid.vue'
+import ColorPopover from '../../../ColorPopover.vue'
 import { useEditorI18n } from '../../../../../composables/useEditorI18n'
 
 const props = defineProps<{
@@ -10,12 +11,6 @@ const props = defineProps<{
 }>()
 
 const { t } = useEditorI18n()
-const textColorOpen = ref(false)
-const highlightColorOpen = ref(false)
-const cellBgColorOpen = ref(false)
-const textColor = ref('#000000')
-const highlightColor = ref('#ffff00')
-const cellBgColor = ref('#ffffff')
 const tableGridOpen = ref(false)
 const calloutMenuOpen = ref(false)
 
@@ -171,34 +166,14 @@ function buildToolbarItems(editor: Editor) {
 
       <!-- Text Color -->
       <template #textColor>
-        <UPopover v-model:open="textColorOpen">
-          <UTooltip :text="t('toolbar.textColor')">
-            <UButton
-              icon="i-lucide-palette"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-            />
-          </UTooltip>
-          <template #content>
-            <div class="p-2">
-              <UColorPicker
-                v-model="textColor"
-                @update:model-value="(val: string) => editor.chain().setColor(val).run()"
-              />
-              <UButton
-                icon="i-lucide-x"
-                :label="t('toolbar.resetColor')"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                block
-                class="mt-2"
-                @click="editor.chain().focus().unsetColor().run(); textColorOpen = false"
-              />
-            </div>
-          </template>
-        </UPopover>
+        <ColorPopover
+          icon="i-lucide-palette"
+          :tooltip="t('toolbar.textColor')"
+          :reset-label="t('toolbar.resetColor')"
+          initial="#000000"
+          @apply="(val: string) => editor.chain().setColor(val).run()"
+          @reset="editor.chain().focus().unsetColor().run()"
+        />
       </template>
 
       <!-- Image Upload -->
@@ -216,34 +191,14 @@ function buildToolbarItems(editor: Editor) {
 
       <!-- Highlight Color -->
       <template #highlightColor>
-        <UPopover v-model:open="highlightColorOpen">
-          <UTooltip :text="t('toolbar.highlight')">
-            <UButton
-              icon="i-lucide-highlighter"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-            />
-          </UTooltip>
-          <template #content>
-            <div class="p-2">
-              <UColorPicker
-                v-model="highlightColor"
-                @update:model-value="(val: string) => editor.chain().setHighlight({ color: val }).run()"
-              />
-              <UButton
-                icon="i-lucide-x"
-                :label="t('toolbar.resetHighlight')"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                block
-                class="mt-2"
-                @click="editor.chain().focus().unsetHighlight().run(); highlightColorOpen = false"
-              />
-            </div>
-          </template>
-        </UPopover>
+        <ColorPopover
+          icon="i-lucide-highlighter"
+          :tooltip="t('toolbar.highlight')"
+          :reset-label="t('toolbar.resetHighlight')"
+          initial="#ffff00"
+          @apply="(val: string) => editor.chain().setHighlight({ color: val }).run()"
+          @reset="editor.chain().focus().unsetHighlight().run()"
+        />
       </template>
 
       <!-- Callout insert -->
@@ -316,34 +271,15 @@ function buildToolbarItems(editor: Editor) {
 
       <!-- Cell background color -->
       <template #cellBgColor>
-        <UPopover v-model:open="cellBgColorOpen" @update:open="(v: boolean) => { if (!v) editor.chain().focus().run() }">
-          <UTooltip :text="t('toolbar.cellBackground')">
-            <UButton
-              icon="i-lucide-paint-bucket"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-            />
-          </UTooltip>
-          <template #content>
-            <div class="p-2">
-              <UColorPicker
-                v-model="cellBgColor"
-                @update:model-value="(val: string) => editor.chain().setCellAttribute('background', val).run()"
-              />
-              <UButton
-                icon="i-lucide-x"
-                :label="t('toolbar.resetBackground')"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                block
-                class="mt-2"
-                @click="editor.chain().setCellAttribute('background', null).run(); cellBgColorOpen = false"
-              />
-            </div>
-          </template>
-        </UPopover>
+        <ColorPopover
+          icon="i-lucide-paint-bucket"
+          :tooltip="t('toolbar.cellBackground')"
+          :reset-label="t('toolbar.resetBackground')"
+          initial="#ffffff"
+          @apply="(val: string) => editor.chain().setCellAttribute('background', val).run()"
+          @reset="editor.chain().setCellAttribute('background', null).run()"
+          @close="editor.chain().focus().run()"
+        />
       </template>
 
       <!-- Delete table -->

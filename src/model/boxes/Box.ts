@@ -1,12 +1,11 @@
 import type { BoxType } from '../types/box-types'
-import type { IBox } from '../types/interfaces'
 import { generateId } from '../utils/generateId'
 
 /**
  * Базовый абстрактный класс для всех блоков редактора.
  * Хранит позицию в сетке (x, y, w, h), метаданные и значение.
  */
-export abstract class Box<T = unknown> implements IBox<T> {
+export abstract class Box<T = unknown> {
   public id: string
   public abstract readonly name_type: BoxType
   public title: string
@@ -19,6 +18,17 @@ export abstract class Box<T = unknown> implements IBox<T> {
   public minH: number
   public i: number
   public abstract value: T
+
+  /**
+   * Персистентные поля подкласса сверх базовых двенадцати: имя — значение по умолчанию.
+   * Базовый конструктор читает их из `data`, `toJSON()` сериализует — подклассу не нужны
+   * ни собственный конструктор, ни `override toJSON()`. Функция в значении вычисляется
+   * при создании (для полей вроде `canvasId`, которые обязаны быть уникальными).
+   *
+   * Поле, попавшее сюда, объявляется в подклассе через `declare` — обычное объявление поля
+   * при `useDefineForClassFields` перезаписало бы присваивание базы значением `undefined`.
+   */
+  protected static readonly extras: Record<string, unknown> = {}
 
   private _onChange?: () => void
 
@@ -48,6 +58,11 @@ export abstract class Box<T = unknown> implements IBox<T> {
     this.minW = (data?.minW as number) ?? 3
     this.minH = (data?.minH as number) ?? 1
     this.i = (data?.i as number) ?? 0
+
+    for (const [key, fallback] of Object.entries((this.constructor as typeof Box).extras)) {
+      (this as Record<string, unknown>)[key] = data?.[key]
+        ?? (typeof fallback === 'function' ? fallback() : fallback)
+    }
   }
 
   /** Обновляет позицию блока в сетке (вызывается из gridstack sync) */
@@ -68,7 +83,7 @@ export abstract class Box<T = unknown> implements IBox<T> {
   }
 
   toJSON(): Record<string, unknown> {
-    return {
+    const json: Record<string, unknown> = {
       id: this.id,
       name_type: this.name_type,
       title: this.title,
@@ -82,5 +97,11 @@ export abstract class Box<T = unknown> implements IBox<T> {
       i: this.i,
       value: this.value
     }
+
+    for (const key of Object.keys((this.constructor as typeof Box).extras)) {
+      json[key] = (this as Record<string, unknown>)[key]
+    }
+
+    return json
   }
 }

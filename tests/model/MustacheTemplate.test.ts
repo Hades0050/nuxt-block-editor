@@ -166,3 +166,45 @@ describe('MustacheTemplate reuse', () => {
     expect(template.render({ name: 'b' })).toBe('b')
   })
 })
+
+describe('MustacheTemplate.scan', () => {
+  it('returns [] when there are no tokens', () => {
+    expect(MustacheTemplate.scan('plain text')).toEqual([])
+  })
+
+  it('reports exact offsets', () => {
+    expect(MustacheTemplate.scan('ab {{x}} cd')).toEqual([
+      { from: 3, to: 8, role: 'var', path: 'x' },
+    ])
+  })
+
+  it('detects all roles', () => {
+    const roles = MustacheTemplate.scan('{{a}}{{#b}}{{^c}}{{/b}}').map(token => token.role)
+    expect(roles).toEqual(['var', 'open', 'inverted', 'close'])
+  })
+
+  it('accepts dotted paths and the dot token', () => {
+    expect(MustacheTemplate.scan('{{user.name}} {{.}}').map(token => token.path))
+      .toEqual(['user.name', '.'])
+  })
+
+  it('accepts indexed paths', () => {
+    expect(MustacheTemplate.scan('{{items.0.title}} {{tags.2}} {{#items.1}}').map(token => token.path))
+      .toEqual(['items.0.title', 'tags.2', 'items.1'])
+  })
+
+  it('tolerates spaces inside the token', () => {
+    expect(MustacheTemplate.scan('{{# items }}')).toEqual([
+      { from: 0, to: 12, role: 'open', path: 'items' },
+    ])
+  })
+
+  it('ignores malformed tokens', () => {
+    expect(MustacheTemplate.scan('{{1abc}} {{ }} {{a b}}')).toEqual([])
+  })
+
+  it('is not confused by repeated calls (lastIndex reset)', () => {
+    expect(MustacheTemplate.scan('{{a}}')).toHaveLength(1)
+    expect(MustacheTemplate.scan('{{a}}')).toHaveLength(1)
+  })
+})

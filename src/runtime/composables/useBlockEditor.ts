@@ -1,7 +1,6 @@
 import { Content } from '#block-editor'
 import { boxFactory } from '#block-editor'
 import type { BoxType } from '#block-editor'
-import type { Box } from '#block-editor'
 import { shallowRef, triggerRef, onUnmounted } from 'vue'
 
 export function useBlockEditor(initialContent?: Content) {
@@ -26,7 +25,7 @@ export function useBlockEditor(initialContent?: Content) {
   })
 
   function addBox(type: BoxType) {
-    const box = boxFactory.createDefault(type) as Box
+    const box = boxFactory.createDefault(type)
     content.value.addBox(box)
     triggerRef(content)
   }

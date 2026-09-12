@@ -2,6 +2,7 @@
 import type { BoxSelect, Box, EditorMode } from '#block-editor'
 import { ref, computed } from 'vue'
 import { useFieldBox } from '../../../../composables/useFieldBox'
+import FieldRow from './FieldRow.vue'
 
 const props = defineProps<{
   box: BoxSelect
@@ -30,51 +31,30 @@ function openOptionsModal(fieldIndex: number) {
 </script>
 
 <template>
-  <div class="space-y-3">
-    <div
-      v-for="(field, fIdx) in box.value"
-      :key="field.id"
-      class="flex items-end gap-2"
-    >
-      <div class="flex-1 min-w-0">
-        <label
-          v-if="field.label"
-          class="block text-xs font-medium text-muted mb-1"
-        >{{ field.label }}</label>
-        <USelect
-          :model-value="field.value?.value ?? ''"
-          :items="field.items.map((i) => ({ label: i.label, value: i.value }))"
-          :disabled="!isFillable"
-          :placeholder="field.placeholder || t('field.selectPlaceholder')"
-          class="w-full"
-          size="sm"
-          @update:model-value="(v: string) => box.selectOption(fIdx, v)"
-        />
-      </div>
+  <FieldRow :box="box" :editable="isEditable">
+    <template #control="{ field, index }">
+      <USelect
+        :model-value="field.value?.value ?? ''"
+        :items="field.items.map((i) => ({ label: i.label, value: i.value }))"
+        :disabled="!isFillable"
+        :placeholder="field.placeholder || t('field.selectPlaceholder')"
+        class="w-full"
+        size="sm"
+        @update:model-value="(v: string) => box.selectOption(index, v)"
+      />
+    </template>
 
-      <BlockEditorBoxesDataFieldActions
-        v-if="isEditable"
-        :label="field.label"
-        :placeholder="field.placeholder"
-        :binding-key="field.bindingKey"
-        @update:label="(v: string) => box.updateFieldAt(fIdx, { label: v })"
-        @update:placeholder="(v: string) => box.updateFieldAt(fIdx, { placeholder: v })"
-        @update:binding-key="(v: string) => box.updateFieldAt(fIdx, { bindingKey: v })"
-        @remove="box.removeFieldAt(fIdx)"
-      >
-        <template #extra-actions>
-          <UTooltip :text="t('selectBlock.manageOptions')">
-            <UButton
-              icon="i-lucide-list"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              @click="openOptionsModal(fIdx)"
-            />
-          </UTooltip>
-        </template>
-      </BlockEditorBoxesDataFieldActions>
-    </div>
+    <template #extra-actions="{ index }">
+      <UTooltip :text="t('selectBlock.manageOptions')">
+        <UButton
+          icon="i-lucide-list"
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          @click="openOptionsModal(index)"
+        />
+      </UTooltip>
+    </template>
 
     <!-- Options management modal -->
     <UModal
@@ -97,7 +77,7 @@ function openOptionsModal(fieldIndex: number) {
               class="w-32 shrink-0 font-mono"
               @update:model-value="
                 (v: string) =>
-                  box.updateOptionValue(optionsModalField!.index, oIdx, v)
+                  box.updateOption(optionsModalField!.index, oIdx, { value: v })
               "
             />
             <UInput
@@ -107,7 +87,7 @@ function openOptionsModal(fieldIndex: number) {
               class="flex-1"
               @update:model-value="
                 (v: string) =>
-                  box.updateOptionLabel(optionsModalField!.index, oIdx, v)
+                  box.updateOption(optionsModalField!.index, oIdx, { label: v })
               "
             />
             <UTooltip :text="t('selectBlock.removeOption')">
@@ -142,5 +122,5 @@ function openOptionsModal(fieldIndex: number) {
         </div>
       </template>
     </UModal>
-  </div>
+  </FieldRow>
 </template>

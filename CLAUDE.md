@@ -18,11 +18,11 @@ Nuxt 4 модуль — блочный редактор контента с drag
 src/
   module.ts                    ← Nuxt module: регистрация компонентов, composables, alias
   model/                       ← Чистая TypeScript модель (без Vue)
-    types/                     ← BOX_TYPES, BoxType, IBox, IContent, IBoxFactory
-    utils/                     ← generateId(), contentRef, dataBinding (collectData/insertData)
+    types/                     ← BOX_TYPES, BoxType, IBoxFactory
+    utils/                     ← generateId(), dataBinding (collectData/insertData)
     icon/Icon.ts               ← Value-объект иконки (name + color)
     form-values/               ← FormValue → FormValueInput, FormValueSelect, FormValueDate
-    boxes/                     ← Box<T> → 14 подклассов (Text, Tabs, Tree, Input, ...)
+    boxes/                     ← Box<T> → 13 подклассов (Text, Tabs, Tree, Input, ...)
     items/                     ← TabItem, TreeNode (вложенный Content внутри)
     content/Content.ts         ← Контейнер блоков: массив + Map-индекс для O(1) поиска
     factory/BoxFactory.ts      ← Фабрика: createDefault(type), prepare(raw)
@@ -30,10 +30,11 @@ src/
   runtime/
     components/block-editor/
       index.vue                ← <BlockEditor> — главный компонент
-      BlockAdder.vue           ← Выбор типа блока (FAB или inline)
+      BlockAdder.vue           ← Выбор типа блока (inline-кнопка + popover)
       Container.vue            ← Обёртка блока: тулбар, настройки, drag-handle
       BoxSkeleton.vue          ← Скелетон загрузки блока
       TitleToolbar.vue         ← Тулбар заголовка блока
+      ColorPopover.vue         ← Кнопка-пипетка: UColorPicker в поповере + сброс
       box-component-map.ts     ← Маппинг BoxType → Vue-компонент
       title-toolbar-config.ts  ← Конфиг тулбара заголовка
       settings/
@@ -53,7 +54,8 @@ src/
             multi-column/      ← Мультиколоночное расширение
             table/             ← Табличное расширение
             slash-commands/    ← Slash-команды
-        data/                  ← Input.vue, Select.vue, DateTime.vue, DatePickerPopover.vue, FieldActions.vue
+        data/                  ← FieldRow.vue (каркас строки поля), Input.vue, Select.vue,
+                                 DateTime.vue, DatePickerPopover.vue
         media/
           File.vue, Video.vue
           canvas/              ← Canvas (Konva): index.vue, CanvasToolbar.vue, useCanvasDraw.ts, canvas-config.ts
@@ -81,13 +83,12 @@ Box<T> (abstract) — id, title, subtitle, позиция в сетке (x, y, w
   ├── BoxText<string>              — HTML (TipTap)
   ├── BoxTextArea<string>          — Простой текст
   ├── BoxMarkdown<string>          — Markdown
-  ├── BoxHtml<Content>             — Вложенный контент
   ├── BoxCode<string>              — Код + язык
   ├── BoxVideo<string>             — URL + размеры iframe
   ├── BoxCanvas<string>            — dataURL рисунка
   ├── BoxFile<string|null>         — Файл (blob URL)
   ├── BoxExternalService<string|null>
-  ├── BoxFields<T extends FormValue> — Массив полей формы
+  ├── BoxFields<T extends FormValue> — Массив полей формы (подкласс задаёт только `static Field`)
   │     ├── BoxInput<FormValueInput>
   │     ├── BoxSelect<FormValueSelect>
   │     └── BoxDateTime<FormValueDate>
@@ -106,11 +107,21 @@ Box<T> (abstract) — id, title, subtitle, позиция в сетке (x, y, w
 - `updateBox` создаёт новый объект через `Object.assign(Object.create(proto), box)` для смены ссылки
 - `syncPositions` использует **дебаунс** (300мс) для `triggerRef` — gridstack уже переместил DOM
 
-### Циклическая зависимость Content ↔ TabItem/TreeNode
-Решена через `utils/contentRef.ts`: Content регистрирует себя (`setContentClass`), TabItem/TreeNode получают через `getContentClass()`.
-
 ### Gridstack resize
 Кастомный `resizeItemToContent`: измеряет `child.offsetHeight` (не `scrollHeight`), временно отключает `sizeToContent` при `grid.update()`. Вложенные редакторы каскадируют resize через `provide('resizeParentGrid')`.
+
+### `Box.extras` — персистентные поля подкласса
+Подкласс перечисляет свои поля сверх базовых двенадцати в `protected static readonly extras`
+(имя — значение по умолчанию; функция в значении вычисляется при создании). Базовый конструктор
+читает их из `data`, `toJSON()` дописывает после базовых ключей. Поэтому листовому боксу не нужны
+ни собственный конструктор, ни `override toJSON()`.
+
+Поле из `extras` объявляется в подклассе через `declare public value: string` — обычное объявление
+поля при `useDefineForClassFields` (включён из-за `target: ESNext`) затёрло бы присваивание базы
+значением `undefined` сразу после возврата из `super()`.
+
+Состав и порядок ключей `toJSON()` для всех 13 типов зафиксирован в
+`tests/model/box-json-contract.test.ts` — цикл по `extras` пересобирает объект, тест ловит сдвиг.
 
 ### Content: Map + Array гибрид
 `boxes: Box[]` — для рендеринга (v-for), порядка, сериализации.
@@ -123,7 +134,7 @@ Box<T> (abstract) — id, title, subtitle, позиция в сетке (x, y, w
 npm run dev                    # playground на localhost:3000
 
 # Тесты
-npx vitest run                 # все тесты (181)
+npx vitest run                 # все тесты (227)
 npx tsc --noEmit               # проверка типов
 
 # Один файл

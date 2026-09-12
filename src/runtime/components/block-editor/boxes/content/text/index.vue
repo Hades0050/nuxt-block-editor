@@ -2,12 +2,10 @@
 import { BOX_TYPES, MustacheTemplate } from '#block-editor'
 import type { BoxText, BoxMarkdown, Box, EditorMode } from '#block-editor'
 import { computed } from 'vue'
-import type { Node as PmNode } from '@tiptap/pm/model'
 import { useBoxModel } from '../../../../../composables/useBoxModel'
 import { useEditorI18n } from '../../../../../composables/useEditorI18n'
 import { useTemplateData } from '../../../../../composables/useTemplateData'
 import { editorExtensions } from './extensions'
-import { editorBubbleItems, floatingMenuItems } from './toolbar-config'
 import TextToolbar from './TextToolbar.vue'
 import TemplateVarsSync from './template-vars/TemplateVarsSync.vue'
 import type { TemplateVarsMeta } from './template-vars/types'
@@ -16,16 +14,8 @@ import styles from './styles.module.css'
 const props = withDefaults(defineProps<{
   box: BoxText | BoxMarkdown
   mode: EditorMode
-  toolbar?: boolean
-  bubbleMenu?: boolean
-  floatingMenu?: boolean
-  placeholder?: boolean
   preview?: boolean
 }>(), {
-  toolbar: true,
-  bubbleMenu: false,
-  floatingMenu: false,
-  placeholder: false,
   preview: false
 })
 
@@ -63,16 +53,6 @@ const templateMeta = computed<TemplateVarsMeta>(() => ({
     empty: t('templateVars.empty')
   }
 }))
-
-const placeholderConfig = computed(() => {
-  if (!props.placeholder) return undefined
-  return {
-    placeholder: ({ node }: { node: PmNode }) => {
-      if (node.type.name === 'heading') return `${t('placeholder.heading')} ${node.attrs.level}`
-      return t('placeholder.typeSlash')
-    }
-  }
-})
 </script>
 
 <template>
@@ -85,29 +65,12 @@ const placeholderConfig = computed(() => {
       :starter-kit="{ codeBlock: false }"
       :editor-props="{ attributes: { spellcheck: 'true' } }"
       :image="{ allowBase64: true, resize: { enabled: true, alwaysPreserveAspectRatio: true } }"
-      :placeholder="placeholderConfig"
       :class="styles.richtext"
     >
       <template #default="{ editor }">
         <TemplateVarsSync :editor="editor" :meta="templateMeta" />
 
-        <TextToolbar v-if="toolbar" :editor="editor" />
-
-        <!-- Bubble menu on selection -->
-        <UEditorToolbar
-          v-if="bubbleMenu"
-          :editor="editor"
-          :items="editorBubbleItems"
-          layout="bubble"
-        />
-
-        <!-- Floating menu on empty lines -->
-        <UEditorToolbar
-          v-if="floatingMenu"
-          :editor="editor"
-          :items="floatingMenuItems"
-          layout="floating"
-        />
+        <TextToolbar :editor="editor" />
       </template>
     </UEditor>
 

@@ -47,10 +47,6 @@ export class BoxTabs extends Box<TabItem[]> {
     this.emitChange()
   }
 
-  notifyContentChange(): void {
-    this.emitChange()
-  }
-
   override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),

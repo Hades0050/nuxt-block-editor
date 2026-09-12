@@ -2,7 +2,6 @@
 export const BOX_TYPES = {
   TEXT: 'TEXT',
   TEXT_AREA: 'TEXT_AREA',
-  HTML: 'HTML',
   MARKDOWN: 'MARKDOWN',
   FILE: 'FILE',
   CODE: 'CODE',

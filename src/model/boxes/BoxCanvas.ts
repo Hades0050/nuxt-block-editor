@@ -5,21 +5,25 @@ import { generateId } from '../utils/generateId'
 /** Блок холста для рисования */
 export class BoxCanvas extends Box<string> {
   public readonly name_type = BOX_TYPES.CANVAS
-  public value: string
-  public canvasId: string
-  public backgroundColor: string
-  public strokeColor: string
-  public lineWidth: number
-  public canvasHeight: number
+  declare public value: string
+  declare public canvasId: string
+  declare public backgroundColor: string
+  declare public strokeColor: string
+  declare public lineWidth: number
+  declare public canvasHeight: number
 
+  protected static override readonly extras = {
+    value: '',
+    canvasId: () => generateId('canvas'),
+    backgroundColor: '#ffffff',
+    strokeColor: '#000000',
+    lineWidth: 2,
+    canvasHeight: 260
+  }
+
+  /** Холст выше прочих блоков по умолчанию — рисовать в одну строку сетки нечем */
   constructor(data?: Partial<Record<string, unknown>>) {
     super({ ...data, h: (data?.h as number) ?? 5 })
-    this.value = (data?.value as string) ?? ''
-    this.canvasId = (data?.canvasId as string) ?? generateId('canvas')
-    this.backgroundColor = (data?.backgroundColor as string) ?? '#ffffff'
-    this.strokeColor = (data?.strokeColor as string) ?? '#000000'
-    this.lineWidth = (data?.lineWidth as number) ?? 2
-    this.canvasHeight = (data?.canvasHeight as number) ?? 260
   }
 
   clear(): void {
@@ -30,16 +34,5 @@ export class BoxCanvas extends Box<string> {
   saveDrawing(data: string): void {
     this.value = data
     this.emitChange()
-  }
-
-  override toJSON(): Record<string, unknown> {
-    return {
-      ...super.toJSON(),
-      canvasId: this.canvasId,
-      backgroundColor: this.backgroundColor,
-      strokeColor: this.strokeColor,
-      lineWidth: this.lineWidth,
-      canvasHeight: this.canvasHeight
-    }
   }
 }

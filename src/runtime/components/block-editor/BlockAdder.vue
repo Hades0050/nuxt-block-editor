@@ -3,12 +3,6 @@ import { BOX_TYPES, type BoxType } from '#block-editor'
 import { ref, computed } from 'vue'
 import { useEditorI18n } from '../../composables/useEditorI18n'
 
-const props = withDefaults(defineProps<{
-  floating?: boolean
-}>(), {
-  floating: false
-})
-
 const emit = defineEmits<{
   add: [type: BoxType]
 }>()
@@ -59,41 +53,7 @@ const categories = computed(() => [
 </script>
 
 <template>
-  <!-- Floating FAB at bottom-right -->
-  <div v-if="floating" class="fixed bottom-6 right-6 z-50">
-    <UPopover v-model:open="open" :content="{ side: 'top', align: 'end' }">
-      <UTooltip :text="t('addBlock')">
-        <UButton
-          icon="i-lucide-plus"
-          color="primary"
-          size="lg"
-          class="rounded-full shadow-lg"
-        />
-      </UTooltip>
-      <template #content>
-        <div class="p-2 w-56 max-h-80 overflow-auto">
-          <div v-for="cat in categories" :key="cat.label" class="mb-2 last:mb-0">
-            <div class="px-2 py-1 text-xs font-medium text-muted uppercase">{{ cat.label }}</div>
-            <UButton
-              v-for="item in cat.items"
-              :key="item.type"
-              :label="item.label"
-              :icon="item.icon"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              block
-              class="justify-start"
-              @click="handleAdd(item.type)"
-            />
-          </div>
-        </div>
-      </template>
-    </UPopover>
-  </div>
-
-  <!-- Inline adder for nested contexts -->
-  <div v-else class="flex items-center justify-center py-2">
+  <div class="flex items-center justify-center py-2">
     <UPopover v-model:open="open" :content="{ align: 'center' }">
       <UTooltip :text="t('addBlock')">
         <UButton

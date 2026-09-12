@@ -62,10 +62,6 @@ export class BoxTree extends Box<TreeNode[]> {
     this.emitChange()
   }
 
-  notifyContentChange(): void {
-    this.emitChange()
-  }
-
   override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),

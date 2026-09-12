@@ -30,7 +30,7 @@ mustache (шаблоны в тексте), Vitest + happy-dom.
 ## 2. Команды
 
 ```bash
-npx vitest run                      # ЕДИНСТВЕННЫЙ надёжный гейт: 13 файлов / 242 теста
+npx vitest run                      # ЕДИНСТВЕННЫЙ надёжный гейт: 12 файлов / 227 тестов
 npx vitest run tests/model/Content.test.ts   # один файл
 npm run dev                         # playground на localhost:3000 (nuxt dev playground)
 npx tsc --noEmit                    # второй гейт: должен быть пуст
@@ -58,12 +58,12 @@ npx tsc --noEmit                    # второй гейт: должен быт
 
 ## 3. Что тестируется, а что нет
 
-Тесты — только чистые юнит-тесты: `tests/model/` (11 файлов) и `tests/composables/` (2 файла).
+Тесты — только чистые юнит-тесты: `tests/model/` (10 файлов) и `tests/composables/` (2 файла).
 
 **Компонентных тестов нет вообще**, `@vue/test-utils` не установлен, в `vitest.config.ts` нет
 vue-плагина. Не пишите тест, импортирующий `.vue` — он не разрешится.
 
-Без автоматического покрытия остаются: все 32 SFC, `useGridstack.ts` (самый хрупкий файл в репо),
+Без автоматического покрытия остаются: все 33 SFC, `useGridstack.ts` (самый хрупкий файл в репо),
 `useFieldBox`, `useEditorI18n`, `useTemplateData`, `useCanvasDraw`, `useTree`, `src/module.ts`,
 локали и вся подсистема TipTap под `boxes/content/text/**`. Зелёный `vitest run` ничего не говорит
 о сетке, drag/resize, TipTap, slash-командах и подсветке шаблонных токенов — это проверяется руками
@@ -76,12 +76,12 @@ vue-плагина. Не пишите тест, импортирующий `.vue
 
 Соглашения тестов: файлы называются `<Subject>.test.ts` по имени класса или модуля
 (`Content.test.ts`, `dataBinding.test.ts`); тест, покрывающий группу классов, — kebab-case по теме
-(`container-boxes.test.ts`, `field-boxes.test.ts`). Модель импортируется **только** через
+(`container-boxes.test.ts`). Модель импортируется **только** через
 `#block-editor`, composables — относительным путём, `describe/it/expect` импортируются явно
 (несмотря на `globals: true`, потому что `tsconfig.types` — только `["vite/client"]`).
 Тесты composables оборачивают тело в `effectScope().run(...)` + `scope.stop()`.
-`vitest.config.ts` не задаёт `include`, поэтому **любой** файл `*.test.ts` где угодно в репозитории
-(включая `playground/`) будет подхвачен — не создавайте черновики с таким именем.
+`vitest.config.ts` задаёт `include: ['tests/**/*.test.ts']`, поэтому файлы `*.test.ts` вне `tests/`
+(например в `playground/`) не подхватываются.
 
 ---
 
@@ -100,15 +100,14 @@ vue-плагина. Не пишите тест, импортирующий `.vue
 ломает что-то одно из {dev, tsc, vitest}.
 
 Правило импортов: модель — всегда через `#block-editor`, composables и соседние компоненты —
-относительными путями (несмотря на настроенный auto-import). `generateId`, `setContentClass`,
-`getContentClass` **не** реэкспортируются из barrel — через голый `#block-editor` их не получить.
-Deep-специфик `#block-editor/utils/generateId` при этом резолвится (`tsconfig` даёт `#block-editor/*`,
-а строковый alias в Vite/vitest матчится по префиксу), но пользоваться им не надо — см. ниже.
+относительными путями (несмотря на настроенный auto-import). `generateId` **не** реэкспортируется
+из barrel — через голый `#block-editor` его не получить. Deep-специфик
+`#block-editor/utils/generateId` при этом резолвится (`tsconfig` даёт `#block-editor/*`,
+а строковый alias в Vite/vitest матчится по префиксу), но пользоваться им не надо.
 
-Не импортируйте вглубь модели (`#block-editor/items/TabItem`): `TabItem`/`TreeNode` получают класс
-`Content` через `getContentClass()!`, а регистрация происходит побочным эффектом вычисления
-`src/model/content/Content.ts` (последняя строка файла). Импорт в обход barrel даёт
-`Cannot read properties of null (reading 'fromRaw')` при конструировании.
+Внутри модели циклов нет: `Content` не импортирует ничего из `items/` в runtime (только
+`import type`), поэтому `TabItem`/`TreeNode` берут `Content` прямым импортом. Прежний
+service-locator `utils/contentRef.ts` (`setContentClass`/`getContentClass`) удалён.
 
 ---
 
@@ -152,7 +151,7 @@ Deep-специфик `#block-editor/utils/generateId` при этом резо�
 ## 6. Модель: чек-лист и ловушки
 
 Иерархия: абстрактный `Box<T>` (дискриминант — поле-литерал `public readonly name_type = BOX_TYPES.X`)
-→ 14 типов из `BOX_TYPES`. Промежуточный абстрактный `BoxFields<T extends FormValue>` для
+→ 13 типов из `BOX_TYPES`. Промежуточный абстрактный `BoxFields<T extends FormValue>` для
 Input/Select/DateTime.
 
 **Добавление нового типа блока** требует правок в пяти местах:
@@ -168,10 +167,9 @@ Input/Select/DateTime.
 
 Чего не делать и о чём помнить:
 
-- **`BOX_TYPES.HTML` — живой тип модели без компонента.** У него есть `BoxHtml`, запись в
-  `TYPE_MAP` и тесты, но нет записи в `boxComponentMap` и в `BlockAdder`. Сохранённый документ с
-  HTML-боксом десериализуется нормально и отрендерит `<component :is="undefined">` — пустоту.
-  Не считайте, что `BOX_TYPES` ⇒ рендерится.
+- **`BOX_TYPES` не гарантирует рендер.** Новый тип надо завести в трёх местах: `TYPE_MAP`
+  фабрики, `boxComponentMap` и `BlockAdder`. Пропустив любое из двух последних, получите бокс,
+  который десериализуется, но рисуется как `<component :is="undefined">` — пустота.
 - **Вложенный контент теряется без фабрики.** `new BoxTabs({ value: [{ content: {...} }] })` без
   второго аргумента даёт пустой `Content`: `Content.fromRaw` проверяет `Array.isArray(raw.boxes) && factory`.
   Всегда передавайте `boxFactory` или идите через `boxFactory.prepare()` / `Content.fromJsonString(json, boxFactory)`.
@@ -185,14 +183,22 @@ Input/Select/DateTime.
 - **Дубликаты id не контролируются.** Второй бокс с тем же id перезаписывает запись в `_boxMap`:
   `findBox`/`updateBox` начинают видеть только его, а первый остаётся в массиве, но становится
   недостижим. `removeBox` удалит второй и оставит первый висеть в `boxes` без записи в Map.
-- Подкласс, добавляющий персистентное поле, обязан переопределить `toJSON()` со спредом
-  родительского (`{ ...super.toJSON(), language: this.language }`) — иначе поле теряется на round-trip.
+- **Персистентное поле подкласса объявляется в `static extras`, а не в конструкторе.**
+  `protected static override readonly extras = { value: '', language: 'javascript' }`: базовый
+  конструктор читает эти ключи из `data`, `toJSON()` дописывает их после двенадцати базовых.
+  Функция в значении вычисляется при создании (`canvasId: () => generateId('canvas')`).
+  Ни своего конструктора, ни `override toJSON()` подклассу не нужно.
+  Само поле объявляется через `declare public value: string` — **обычное** объявление поля при
+  `useDefineForClassFields` (он включён, потому что `target: ESNext`) затрёт присваивание базы
+  значением `undefined` сразу после возврата из `super()`, и бокс молча потеряет значение.
+  Состав и порядок ключей `toJSON()` для всех 13 типов закреплён в
+  `tests/model/box-json-contract.test.ts` — цикл по `extras` пересобирает объект, тест ловит сдвиг.
 - `generateId(prefix)` — это `${prefix}_${Date.now()}_${++counter}` с модульным счётчиком.
   Уникален только в пределах процесса; id, созданные на сервере, надо сериализовать и переиспользовать,
   а не генерировать заново на клиенте.
 - Конструкторы боксов и items имеют форму `(data?: Partial<Record<string, unknown>>, factory?: IBoxFactory)`
   и читают поля как `(data?.x as T) ?? default`; второй параметр объявляют только те, у кого внутри
-  вложенный `Content` (`BoxHtml`, `BoxTabs`, `BoxTree`, `TabItem`, `TreeNode`). Исключения из формы:
+  вложенный `Content` (`BoxTabs`, `BoxTree`, `TabItem`, `TreeNode`). Исключения из формы:
   `Icon(name?, color?)`, `Content(boxes?)` и `FormValue*` (берут `Partial<Self>`, читают без каста).
   Валидации нет и не надо — следуйте форме, иначе `boxFactory.prepare` сломается.
 - Enum-подобные константы — `as const`-объект + производный union, никогда TS `enum`.
@@ -203,7 +209,10 @@ Input/Select/DateTime.
 (точечные пути). Обход заходит ровно в три вида боксов: `BoxFields`, `BoxTabs` (по `.content`
 каждой вкладки) и `BoxTree` (по `.content` узла и его детям).
 
-- **Поля внутри `BoxHtml` невидимы** для всех трёх функций.
+Что считать плоским значением поля, решает само поле — аксессор `FormValue.boundValue`
+(база: строка; `FormValueSelect` переопределяет на `value` выбранной опции и обратный поиск
+по `items`). `dataBinding` о конкретных классах полей не знает.
+
 - `setByPath` затирает при коллизии путей (`user` и `user.name`); `findDuplicateBindingKeys`
   этот класс конфликтов не ловит — он считает только одинаковые ключи.
 - «Ключа нет» и «ключ есть, но `null`» ведут себя по-разному: `insertData` пропускает `undefined`,
@@ -218,21 +227,24 @@ Input/Select/DateTime.
 
 Появилась в коммите `b852683`, в `CLAUDE.md` отсутствует полностью.
 
-Модель — `src/model/template/`:
+Модель — `src/model/template/` (4 файла: `types.ts`, `MustacheTemplate.ts`,
+`TemplateDataSource.ts`, `index.ts`):
 
-- `scanTokens.ts:4` — регулярка токенов `/\{\{([#^/]?)\s*([A-Za-z_$][\w$.]*|\.)\s*\}\}/g`.
-  Единственный её потребитель вне тестов — подсветка в редакторе (`template-vars-plugin.ts:40`);
-  путь рендера (`MustacheTemplate` → `normalizeTemplate` → пакет `mustache`) её не вызывает.
-  Грамматика «сигил + путь» продублирована ещё дважды в `normalizeTemplate.ts`: в
-  `STANDALONE_SECTION_RE` (строка 6) и во внутренней проверке `healTags` (строка 22). Меняете
-  синтаксис токена — правьте все три места, иначе нормализация ослепнет на новом синтаксисе.
-- `normalizeTemplate.ts` — три строковых прохода строго в этом порядке: `healTags` (снимает
-  inline-разметку, которую TipTap затащил внутрь токена) → `unwrapStandaloneTags` (схлопывает
+- `MustacheTemplate.ts` — единственный владелец синтаксиса `{{…}}`: и парсер, и нормализация,
+  и рендер. Грамматика объявлена **один раз** — хелпер `tokenBody(sigil)`, из которого собраны
+  `TOKEN_RE` (сканер), `CLEAN_BODY_RE` (проверка в `healTags`) и `SECTION_BLOCK_RE` (схлопывание
+  блоков). Меняете синтаксис токена — правите `tokenBody`, остальное подтягивается само.
+- `MustacheTemplate.scan(source)` — токены со смещениями. Единственный потребитель вне тестов —
+  подсветка в редакторе (`template-vars-plugin.ts:40`); путь рендера её не вызывает.
+  Сделан на `matchAll`, поэтому `lastIndex` общего `TOKEN_RE` не двигается между вызовами.
+- Приватная `normalize` — три строковых прохода строго в этом порядке: `healTags` (снимает
+  inline-разметку, которую TipTap затащил внутрь токена) → `unwrapSections` (схлопывает
   `p|div|li|h1-h6`, всё содержимое которых — один маркер секции) → `disableRawOutput`
   (`{{{`→`{{`, `}}}`→`}}`, `{{&`→`{{`).
-- `MustacheTemplate.ts` — фасад над пакетом `mustache`.
-- `TemplateDataSource.ts` — иммутабельное глубокое слияние источников + `flattenDataPaths`
-  (ключи автокомплита) + `normalizeIndexPath`.
+- `TemplateDataSource.ts` — иммутабельное глубокое слияние источников (`private static merge`)
+  + `keys()` (ключи автокомплита, `private static flatten`) + `static normalizeIndexPath`.
+  Наружу из `#block-editor` по шаблонам торчат ровно пять имён: `MustacheTemplate`,
+  `TemplateDataSource`, `TokenRole`, `TemplateToken`, `TemplateKey`.
 
 Правила, принятые сознательно:
 
@@ -245,9 +257,9 @@ Input/Select/DateTime.
   если будете ужесточать — нейтрализуйте и `{{=`.
 - Доступ по порядковому номеру работает: `{{items.0.title}}`, `{{tags.1}}`, `{{#items.1}}…{{/items.1}}`.
   Индекс вне диапазона даёт пустую строку и включает инвертированную секцию `{{^items.9}}`.
-  `flattenDataPaths` выдаёт для массива объектов три вида ключей: сам массив как `kind:'section'`,
+  `keys()` выдаёт для массива объектов три вида ключей: сам массив как `kind:'section'`,
   относительные ключи элемента со `scope` (для использования внутри `{{#items}}`) и образец
-  `items.0.<key>` без scope. `normalizeIndexPath` приводит любой индекс к нулю (`items.3.title` →
+  `items.0.<key>` без scope. `TemplateDataSource.normalizeIndexPath` приводит любой индекс к нулю (`items.3.title` →
   `items.0.title`) — им пользуется только подсветка, чтобы произвольный индекс не считался неизвестным.
 
 Ловушки:
@@ -257,16 +269,16 @@ Input/Select/DateTime.
 - `disableRawOutput` — слепая глобальная замена: литеральные `}}}` в обычном тексте превратятся в
   `}}`. Сохранённое значение не трогается, искажение видно только в превью.
 - Пробел между скобками и сигилом меняет всё: mustache считает `{{ #items }}` секцией, а
-  `scanTokens` и `unwrapStandaloneTags` требуют сигил вплотную к `{{`. Результат — нет подсветки и
+  `MustacheTemplate.scan` и `unwrapSections` требуют сигил вплотную к `{{`. Результат — нет подсветки и
   остаётся пустой `<p>`. Пробелы **после** сигила (`{{# items }}`) безопасны везде.
-- `unwrapStandaloneTags` знает только `p|div|li|h1-h6`. Маркер в `<blockquote>`, `<td>`, `<th>`
+- `unwrapSections` знает только `p|div|li|h1-h6`. Маркер в `<blockquote>`, `<td>`, `<th>`
   сохранит обёртку. И обёртка должна содержать **только** маркер — `<p>{{#items}}<br></p>` не
   схлопнется.
 - Подсветка «неизвестных» токенов — подсказка, а не валидатор: `knownPaths` строится только из
   `key.path` и игнорирует `key.scope`, поэтому относительные ключи утекают в глобальный набор.
 - `TemplateDataSource.keys()` кэшируется на инстансе навсегда. Корректность держится на том, что
   `TemplateDataSource.from(...)` вызывается внутри `computed` и создаёт **новый** инстанс.
-- Модель обязана оставаться без DOM и Vue. Не «улучшайте» `normalizeTemplate` через `DOMParser`:
+- Модель обязана оставаться без DOM и Vue. Не «улучшайте» `normalize` через `DOMParser`:
   пара `{{#items}}…{{/items}}`, разнесённая TipTap по соседним блокам, не является корректным
   поддеревом, и round-trip через DOM её сломает.
 - Превью — локальный `ref(false)` в `Container.vue` без персистентности, и оно принудительно
@@ -321,8 +333,12 @@ read-only/превью, но не оба.
 - Ни один из `@tiptap/core`, `@tiptap/vue-3`, `@tiptap/suggestion`, `@tiptap/pm`,
   `@tiptap/extension-list`, `@floating-ui/dom`, `@internationalized/date`
   **не объявлен в `package.json`** (последний импортируется не здесь, а в
-  `boxes/data/DatePickerPopover.vue`; `@tiptap/starter-kit` в коде не импортируется вовсе —
-  он приходит как зависимость @nuxt/ui и настраивается пропом `:starter-kit`) — они резолвятся только благодаря hoisting из @nuxt/ui.
+  `boxes/data/DatePickerPopover.vue`; `@tiptap/starter-kit` приходит как зависимость @nuxt/ui и
+  настраивается пропом `:starter-kit`, а в коде есть ровно один его импорт — `import type {} from
+  '@tiptap/starter-kit'` в `table/slash-commands/slash-commands.ts`, и он нужен: без него
+  module augmentation не попадает в программу и `tsc` не видит `setHeading`/`toggleBulletList`/
+  `toggleOrderedList`/`toggleBlockquote`/`setHorizontalRule` в цепочках `ChainedCommands`)
+  — они резолвятся только благодаря hoisting из @nuxt/ui.
   При строгом установщике (pnpm, Yarn PnP) сборка развалится. Добавляя импорт ещё одного
   транзитивного пакета, вы углубляете эту яму.
 - `src/module.ts:15-32` (правка `vite.optimizeDeps`) — **несущая** конструкция против дублирующихся
@@ -380,6 +396,22 @@ read-only/превью, но не оба.
 - Внутри модуля composables импортируются **явными относительными путями**, несмотря на
   настроенный auto-import (36 мест). `Video.vue` — единственное исключение, оно работает только
   благодаря auto-import; не копируйте его как образец.
+- `FieldRow.vue` — каркас строки поля для Input/Select/DateTime: `v-for` по `box.value`, метка,
+  поповер настроек (label / placeholder / bindingKey) и корзина. Сам вызывает
+  `box.updateFieldAt` / `box.removeFieldAt`, поэтому пропов у него ровно два (`box`, `editable`)
+  и ни одного эмита. Слоты: `control` (само поле ввода, scoped — отдаёт `field` и `index`),
+  `extra-settings` и `extra-actions` (тоже scoped), плюс безымянный — для того, что должно лежать
+  рядом со строками (модалка опций в `Select.vue`).
+  Он `generic="T extends FormValue"`, и вывод типа в слотах работает только при **явном**
+  `import FieldRow from './FieldRow.vue'`; через auto-import (`BlockEditorBoxesDataFieldRow`)
+  `field` в слоте выродится в `any`.
+- `ColorPopover.vue` — кнопка-пипетка: `UColorPicker` в поповере плюс кнопка сброса.
+  Выбранный цвет держит **сам** компонент (`const color = ref(props.initial)`); родитель получает
+  его через `@apply`. Привязать `:model-value="initial"` вместо локального `ref` — заморозить пикер.
+  Цепочки TipTap в `TitleToolbar.vue` и `TextToolbar.vue` намеренно несимметричны: `apply` идёт
+  **без** `.focus()` (иначе поповер закрывается на первом же движении пипетки). У цвета текста и
+  подсветки `.focus()` стоит в `reset`; у фона ячейки таблицы — не в `reset`, а в отдельном
+  `@close`, потому что `setCellAttribute` работает только пока выделение ячейки живо.
 - `Container.vue` выбирает кнопки добавления (поле, вкладка, узел дерева, переключатель режима
   дерева) через `instanceof` по модельным классам. Кнопка превью шаблона — единственная, что
   выбирается по `name_type` (`Container.vue:33-38`), как и выбор самого компонента бокса.
@@ -456,7 +488,6 @@ read-only/превью, но не оба.
 
 `CLAUDE.md` расходится с репозиторием как минимум в следующем:
 
-- говорит про 181 тест — реально 13 файлов / 242 теста;
 - дерево проекта не содержит `src/model/template/`, `src/runtime/composables/useTemplateData.ts`
   и каталога `boxes/content/text/template-vars/`;
 - помещает `slash-commands/` прямо в `text/`, хотя реальный путь —

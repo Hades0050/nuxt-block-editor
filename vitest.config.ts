@@ -4,7 +4,8 @@ import { resolve } from 'path'
 export default defineConfig({
   test: {
     environment: 'happy-dom',
-    globals: true
+    globals: true,
+    include: ['tests/**/*.test.ts']
   },
   resolve: {
     alias: {

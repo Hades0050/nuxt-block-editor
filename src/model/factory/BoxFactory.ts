@@ -1,10 +1,9 @@
-import type { IBoxFactory, IBox } from '../types/interfaces'
+import type { IBoxFactory } from '../types/interfaces'
 import type { BoxType } from '../types/box-types'
 import { BOX_TYPES } from '../types/box-types'
 import type { Box } from '../boxes/Box'
 import { BoxText } from '../boxes/BoxText'
 import { BoxTextArea } from '../boxes/BoxTextArea'
-import { BoxHtml } from '../boxes/BoxHtml'
 import { BoxMarkdown } from '../boxes/BoxMarkdown'
 import { BoxFile } from '../boxes/BoxFile'
 import { BoxCode } from '../boxes/BoxCode'
@@ -17,12 +16,11 @@ import { BoxTree } from '../boxes/BoxTree'
 import { BoxVideo } from '../boxes/BoxVideo'
 import { BoxCanvas } from '../boxes/BoxCanvas'
 
-export type BoxConstructor = new (data?: Partial<Record<string, unknown>>, factory?: IBoxFactory) => Box
+type BoxConstructor = new (data?: Partial<Record<string, unknown>>, factory?: IBoxFactory) => Box
 
 const TYPE_MAP: Record<string, BoxConstructor> = {
   [BOX_TYPES.TEXT]: BoxText,
   [BOX_TYPES.TEXT_AREA]: BoxTextArea,
-  [BOX_TYPES.HTML]: BoxHtml,
   [BOX_TYPES.MARKDOWN]: BoxMarkdown,
   [BOX_TYPES.FILE]: BoxFile,
   [BOX_TYPES.CODE]: BoxCode,
@@ -36,11 +34,8 @@ const TYPE_MAP: Record<string, BoxConstructor> = {
   [BOX_TYPES.CANVAS]: BoxCanvas
 }
 
-export const boxFactory: IBoxFactory & {
-  /** Регистрирует пользовательский тип бокса */
-  registerBoxType(type: string, ctor: BoxConstructor): void
-} = {
-  prepare(raw: unknown): IBox {
+export const boxFactory: IBoxFactory = {
+  prepare(raw: unknown): Box {
     if (!raw || typeof raw !== 'object') {
       throw new Error('Invalid box: not an object')
     }
@@ -53,13 +48,9 @@ export const boxFactory: IBoxFactory & {
     return new Ctor(obj, boxFactory)
   },
 
-  createDefault(type: BoxType): IBox {
+  createDefault(type: BoxType): Box {
     const Ctor = TYPE_MAP[type]
     if (!Ctor) throw new Error(`Unknown box type: ${type}`)
     return new Ctor(undefined, boxFactory)
-  },
-
-  registerBoxType(type: string, ctor: BoxConstructor): void {
-    TYPE_MAP[type] = ctor
   }
 }

@@ -221,8 +221,6 @@ export default {
   },
 
   placeholder: {
-    heading: 'Заголовок',
-    typeSlash: 'Введите "/" для команд...',
     enterText: 'Введите текст...',
     empty: 'Пусто'
   }

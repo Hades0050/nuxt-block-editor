@@ -44,23 +44,6 @@ describe('BoxDateTime', () => {
     })
   })
 
-  describe('removeField', () => {
-    it('removes field by id', () => {
-      const box = new BoxDateTime()
-      box.addField()
-      const id = box.value[0]!.id
-      box.removeField(id)
-      expect(box.value).toHaveLength(1)
-      expect(box.value.find(f => f.id === id)).toBeUndefined()
-    })
-
-    it('does nothing for non-existent id', () => {
-      const box = new BoxDateTime()
-      box.removeField('nonexistent')
-      expect(box.value).toHaveLength(1)
-    })
-  })
-
   describe('updateFieldAt', () => {
     it('updates label', () => {
       const box = new BoxDateTime()

@@ -1,9 +1,5 @@
 import type { Content } from '../content/Content'
-import type { IContent } from '../types/interfaces'
 import type { FormValue } from '../form-values/FormValue'
-import { FormValueInput } from '../form-values/FormValueInput'
-import { FormValueSelect } from '../form-values/FormValueSelect'
-import { FormValueDate } from '../form-values/FormValueDate'
 import { BoxFields } from '../boxes/BoxFields'
 import { BoxTabs } from '../boxes/BoxTabs'
 import { BoxTree } from '../boxes/BoxTree'
@@ -45,7 +41,7 @@ function getByPath(obj: Record<string, unknown>, path: string): unknown {
 /**
  * Обходит Content рекурсивно, вызывая callback для каждого FormValue поля.
  */
-function walkFields(content: IContent, callback: (field: FormValue) => void): void {
+function walkFields(content: Content, callback: (field: FormValue) => void): void {
   for (const box of content.boxes) {
     if (box instanceof BoxFields) {
       for (const field of box.value) {
@@ -79,34 +75,15 @@ function walkTreeNodes(nodes: TreeNode[], callback: (field: FormValue) => void):
 /**
  * Обходит Content рекурсивно, собирает значения полей форм по bindingKey.
  * Возвращает объект с вложенными путями: "user.name" → { user: { name: value } }.
- *
- * - Input: строковое значение
- * - Select: value строка из выбранной опции (или null)
- * - DateTime: строковое значение
- * - Поля без bindingKey пропускаются
+ * Что считать значением, решает само поле — см. FormValue.boundValue.
+ * Поля без bindingKey пропускаются.
  */
 export function collectData(content: Content): Record<string, unknown> {
   const result: Record<string, unknown> = {}
 
   walkFields(content, (field) => {
     if (!field.bindingKey) return
-
-    let extractedValue: unknown
-
-    if (field instanceof FormValueInput) {
-      extractedValue = field.value
-    }
-    else if (field instanceof FormValueSelect) {
-      extractedValue = field.value?.value ?? null
-    }
-    else if (field instanceof FormValueDate) {
-      extractedValue = field.value
-    }
-    else {
-      return
-    }
-
-    setByPath(result, field.bindingKey, extractedValue)
+    setByPath(result, field.bindingKey, field.boundValue)
   })
 
   return result
@@ -114,11 +91,9 @@ export function collectData(content: Content): Record<string, unknown> {
 
 /**
  * Обходит Content рекурсивно, заполняет поля форм значениями из data по bindingKey.
- *
- * - Input: устанавливает строку
- * - Select: ищет опцию по value в items, устанавливает SelectOption или null
- * - DateTime: устанавливает строку
- * - Поля без bindingKey или с отсутствующим ключом в data — не трогает
+ * Как уложить значение, решает само поле — см. FormValue.boundValue.
+ * Поля без bindingKey или с отсутствующим ключом в data — не трогает
+ * (отсутствующий ключ и `null` — разное: `null` записывается).
  */
 export function insertData(content: Content, data: Record<string, unknown>): void {
   walkFields(content, (field) => {
@@ -127,21 +102,7 @@ export function insertData(content: Content, data: Record<string, unknown>): voi
     const value = getByPath(data, field.bindingKey)
     if (value === undefined) return
 
-    if (field instanceof FormValueInput) {
-      field.value = String(value ?? '')
-    }
-    else if (field instanceof FormValueSelect) {
-      if (value === null) {
-        field.value = null
-      }
-      else {
-        const stringValue = String(value)
-        field.value = field.items.find(item => item.value === stringValue) ?? null
-      }
-    }
-    else if (field instanceof FormValueDate) {
-      field.value = String(value ?? '')
-    }
+    field.boundValue = value
   })
 }
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   boxFactory, BOX_TYPES,
   BoxText, BoxInput, BoxSelect, BoxDateTime,
-  BoxHtml, BoxTabs, BoxTree, BoxCode,
+  BoxTabs, BoxTree, BoxCode,
   BoxVideo, BoxCanvas, BoxFile, BoxMarkdown,
   BoxTextArea, BoxExternalService,
 } from '#block-editor'
@@ -13,7 +13,6 @@ describe('BoxFactory', () => {
     const cases: [BoxType, any][] = [
       [BOX_TYPES.TEXT, BoxText],
       [BOX_TYPES.TEXT_AREA, BoxTextArea],
-      [BOX_TYPES.HTML, BoxHtml],
       [BOX_TYPES.MARKDOWN, BoxMarkdown],
       [BOX_TYPES.FILE, BoxFile],
       [BOX_TYPES.CODE, BoxCode],
@@ -133,7 +132,7 @@ describe('BoxFactory', () => {
     it('SELECT box roundtrip preserves options', () => {
       const original = boxFactory.createDefault(BOX_TYPES.SELECT) as BoxSelect
       original.addOption(0)
-      original.updateOptionLabel(0, 1, 'Custom')
+      original.updateOption(0, 1, { label: 'Custom' })
 
       const json = original.toJSON()
       const restored = boxFactory.prepare(json) as BoxSelect

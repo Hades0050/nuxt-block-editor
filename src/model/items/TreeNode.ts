@@ -1,22 +1,21 @@
 import { Icon } from '../icon/Icon'
 import { generateId } from '../utils/generateId'
-import { getContentClass } from '../utils/contentRef'
-import type { IBoxFactory, IContent } from '../types/interfaces'
+import { Content } from '../content/Content'
+import type { IBoxFactory } from '../types/interfaces'
 
 /** Узел дерева — хранит label, icon, вложенный контент и дочерние узлы */
 export class TreeNode {
   public id: string
   public label: string
   public icon: Icon
-  public content: IContent
+  public content: Content
   public children: TreeNode[]
 
   constructor(data?: Partial<Record<string, unknown>>, factory?: IBoxFactory) {
     this.id = (data?.id as string) ?? generateId('node')
     this.label = (data?.label as string) ?? 'Node'
     this.icon = Icon.from(data?.icon as { name?: string; color?: string } | undefined)
-    const CC = getContentClass()!
-    this.content = CC.fromRaw(data?.content, factory)
+    this.content = Content.fromRaw(data?.content, factory)
     const rawChildren = data?.children as unknown[] | undefined
     this.children = Array.isArray(rawChildren)
       ? rawChildren.map(item => new TreeNode(item as Record<string, unknown>, factory))

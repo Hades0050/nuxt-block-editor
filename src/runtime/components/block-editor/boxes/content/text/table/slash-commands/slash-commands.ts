@@ -1,3 +1,7 @@
+// StarterKit добавляет setHeading/toggleBulletList/toggleOrderedList/toggleBlockquote/
+// setHorizontalRule в ChainedCommands через module augmentation. Импорт нужен ради неё:
+// без него tsc не видит этих команд в цепочках ниже.
+import type {} from '@tiptap/starter-kit'
 import { Extension } from '@tiptap/core'
 import { VueRenderer } from '@tiptap/vue-3'
 import { Suggestion } from '@tiptap/suggestion'

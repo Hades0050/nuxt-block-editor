@@ -5,28 +5,33 @@ import type { FormValue } from '../form-values/FormValue'
  * Базовый класс для блоков с массивом полей формы (input, select, datetime).
  * Централизует CRUD-операции и десериализацию полей.
  */
+type FieldCtor<T extends FormValue> = new (raw?: Record<string, unknown>) => T
+
 export abstract class BoxFields<T extends FormValue> extends Box<T[]> {
-  public abstract override value: T[]
+  /** Класс поля — единственное, чем различаются подклассы. Задаётся в них статиком. */
+  protected static readonly Field: unknown
 
-  /** Создаёт новое пустое поле — реализуется в подклассах */
-  protected abstract createField(): T
+  public override value: T[]
 
-  /** Восстанавливает поле из сырых данных — реализуется в подклассах */
-  protected abstract restoreField(raw: unknown): T
+  constructor(data?: Partial<Record<string, unknown>>) {
+    super(data)
+    this.value = this.prepareValue(data?.value)
+  }
 
-  /** Десериализация массива полей из сырых данных */
+  /** Конструктор поля текущего подкласса */
+  protected get fieldCtor(): FieldCtor<T> {
+    return (this.constructor as typeof BoxFields).Field as FieldCtor<T>
+  }
+
+  /** Десериализация массива полей из сырых данных; пустой блок получает одно пустое поле */
   protected prepareValue(raw: unknown): T[] {
-    if (!raw || !Array.isArray(raw)) return [this.createField()]
-    return raw.map(item => this.restoreField(item))
+    const Field = this.fieldCtor
+    if (!Array.isArray(raw)) return [new Field()]
+    return raw.map(item => new Field(item as Record<string, unknown>))
   }
 
   addField(): void {
-    this.value.push(this.createField())
-    this.emitChange()
-  }
-
-  removeField(id: string): void {
-    this.value = this.value.filter(f => f.id !== id)
+    this.value.push(new this.fieldCtor())
     this.emitChange()
   }
 

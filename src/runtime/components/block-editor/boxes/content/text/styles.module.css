@@ -8,12 +8,24 @@
   border-color: var(--ui-border-accented);
 }
 
+/* Просмотр и превью — рамка и отступы только у редактируемого редактора */
+.richtext.readonly,
+.richtext.readonly:focus-within {
+  border: 0;
+  border-radius: 0;
+}
+
+.richtext.readonly :global(.tiptap) {
+  min-height: 0;
+  padding: 0;
+}
+
 /* Редактор */
 .richtext :global(.tiptap) {
   min-height: 120px;
   outline: none;
   position: relative;
-  padding: 0.75rem 0.75rem 0.75rem 2rem;
+  padding: 0.75rem;
 }
 
 /* Placeholder — обрабатывается через Placeholder extension + общие стили ниже */

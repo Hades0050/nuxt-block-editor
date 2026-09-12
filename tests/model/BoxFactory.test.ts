@@ -6,10 +6,11 @@ import {
   BoxVideo, BoxCanvas, BoxFile, BoxMarkdown,
   BoxTextArea, BoxExternalService,
 } from '#block-editor'
+import type { BoxType } from '#block-editor'
 
 describe('BoxFactory', () => {
   describe('createDefault', () => {
-    const cases: [string, any][] = [
+    const cases: [BoxType, any][] = [
       [BOX_TYPES.TEXT, BoxText],
       [BOX_TYPES.TEXT_AREA, BoxTextArea],
       [BOX_TYPES.HTML, BoxHtml],

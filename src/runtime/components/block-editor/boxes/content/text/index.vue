@@ -19,14 +19,12 @@ const props = withDefaults(defineProps<{
   toolbar?: boolean
   bubbleMenu?: boolean
   floatingMenu?: boolean
-  dragHandle?: boolean
   placeholder?: boolean
   preview?: boolean
 }>(), {
   toolbar: true,
   bubbleMenu: false,
   floatingMenu: false,
-  dragHandle: true,
   placeholder: false,
   preview: false
 })
@@ -110,9 +108,6 @@ const placeholderConfig = computed(() => {
           :items="floatingMenuItems"
           layout="floating"
         />
-
-        <!-- Side menu — drag handle -->
-        <UEditorDragHandle v-if="dragHandle" :editor="editor" :options="{ flip: false }" />
       </template>
     </UEditor>
 
@@ -124,7 +119,7 @@ const placeholderConfig = computed(() => {
       :extensions="editorExtensions"
       :starter-kit="{ codeBlock: false }"
       :editable="false"
-      :class="styles.richtext"
+      :class="[styles.richtext, styles.readonly]"
     />
   </div>
 </template>

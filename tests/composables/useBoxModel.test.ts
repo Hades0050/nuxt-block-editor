@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { ref, effectScope, nextTick } from 'vue'
+import { ref, shallowRef, effectScope, nextTick } from 'vue'
 import { useBoxModel, useBoxChange } from '../../src/runtime/composables/useBoxModel'
 import { BoxText } from '#block-editor'
 
@@ -92,7 +92,7 @@ describe('useBoxChange', () => {
   it('re-binds when box ref changes', async () => {
     const scope = effectScope()
     await scope.run(async () => {
-      const boxRef = ref(new BoxText({ id: 'box-1' }))
+      const boxRef = shallowRef(new BoxText({ id: 'box-1' }))
       const emit = vi.fn()
 
       useBoxChange(() => boxRef.value, emit)

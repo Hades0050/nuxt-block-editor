@@ -1,4 +1,5 @@
 import type { Content } from '../content/Content'
+import type { IContent } from '../types/interfaces'
 import type { FormValue } from '../form-values/FormValue'
 import { FormValueInput } from '../form-values/FormValueInput'
 import { FormValueSelect } from '../form-values/FormValueSelect'
@@ -44,7 +45,7 @@ function getByPath(obj: Record<string, unknown>, path: string): unknown {
 /**
  * Обходит Content рекурсивно, вызывая callback для каждого FormValue поля.
  */
-function walkFields(content: Content, callback: (field: FormValue) => void): void {
+function walkFields(content: IContent, callback: (field: FormValue) => void): void {
   for (const box of content.boxes) {
     if (box instanceof BoxFields) {
       for (const field of box.value) {

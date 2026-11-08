@@ -1,6 +1,6 @@
 import type { GridStack, GridStackNode } from 'gridstack'
 import type { InjectionKey } from 'vue'
-import { ref, watch, nextTick, isRef, onMounted, onBeforeUnmount, type Ref } from 'vue'
+import { watch, nextTick, isRef, onMounted, onBeforeUnmount, type Ref } from 'vue'
 
 /** Ключ provide/inject для каскадного resize вложенных gridstack-сеток */
 export const RESIZE_PARENT_KEY: InjectionKey<() => void> = Symbol('resizeParentGrid')
@@ -28,31 +28,43 @@ export function useGridstack(
   let mutationObserver: MutationObserver | null = null
   let resizeFrame: number | null = null
   let parentResizeFrame: number | null = null
-  const isReady = ref(false)
+  let initialResizeTimer: ReturnType<typeof setTimeout> | null = null
+  // onMounted и watch(containerRef) оба запускают init до первого await — без флага он выполнится дважды
+  let initStarted = false
+
+  interface PendingResize {
+    el: HTMLElement
+    node: GridStackNode
+    h: number
+  }
 
   /**
-   * Custom resize logic that uses scrollHeight instead of getBoundingClientRect().
-   * Gridstack's built-in resizeToContent fails for nested grids because
-   * .grid-stack-item-content is position:absolute with inset, so its child's
-   * getBoundingClientRect().height returns the constrained height, not the natural one.
+   * Custom resize logic that measures the first child's offsetHeight instead of
+   * getBoundingClientRect(). Gridstack's built-in resizeToContent fails for nested
+   * grids because .grid-stack-item-content is position:absolute with inset, so its
+   * child's getBoundingClientRect().height returns the constrained height, not the
+   * natural one.
    *
    * Key insight: calling grid.update() triggers gridstack's internal
    * resizeToContentCheck() which re-runs the broken measurement and overrides
    * our correct height. We temporarily disable node.sizeToContent to prevent this.
+   *
+   * Только чтение: возвращает новую высоту в ячейках или null, если менять нечего.
+   * Чтения и записи разнесены по фазам, чтобы update не вызывал forced reflow на следующем item.
    */
-  function resizeItemToContent(el: HTMLElement) {
-    if (!grid || !el.clientHeight) return
+  function measureItem(el: HTMLElement): PendingResize | null {
+    if (!grid || !el.clientHeight) return null
     const node = (el as any).gridstackNode
-    if (!node) return
+    if (!node) return null
     // Skip nodes being actively dragged/resized — calling grid.update() during
     // a move deletes node._orig which gridstack needs in onEndMoving.
-    if (node._moving || node._resizing) return
+    if (node._moving || node._resizing) return null
 
     const cell = grid.getCellHeight(true)
-    if (!cell) return
+    if (!cell) return null
 
     const contentEl = el.querySelector('.grid-stack-item-content') as HTMLElement
-    if (!contentEl) return
+    if (!contentEl) return null
 
     // Measure the first child instead of contentEl.scrollHeight.
     // contentEl is position:absolute with inset, so its scrollHeight can never
@@ -65,23 +77,29 @@ export function useGridstack(
     const marginV = el.clientHeight - contentEl.clientHeight
     const h = Math.max(1, Math.ceil((wantedH + marginV) / cell))
 
-    if (node.minH && h < node.minH) return
-    if (h !== node.h) {
-      // Temporarily disable sizeToContent so gridstack's internal
-      // resizeToContentCheck (triggered by update()) doesn't override
-      // our scrollHeight-based measurement with its own broken one
-      const origSTC = node.sizeToContent
-      node.sizeToContent = false
-      grid.update(el, { h })
-      node.sizeToContent = origSTC
-    }
+    if (node.minH && h < node.minH) return null
+    return h !== node.h ? { el, node, h } : null
+  }
+
+  function applyResize({ el, node, h }: PendingResize) {
+    // Temporarily disable sizeToContent so gridstack's internal
+    // resizeToContentCheck (triggered by update()) doesn't override
+    // our offsetHeight-based measurement with its own broken one
+    const origSTC = node.sizeToContent
+    node.sizeToContent = false
+    grid!.update(el, { h })
+    node.sizeToContent = origSTC
   }
 
   function resizeAllToContent() {
     if (!grid) return
-    grid.getGridItems().forEach(el => resizeItemToContent(el))
-    // Notify parent grid to re-measure after nested changes are painted
-    if (options.onContentResize) {
+    const pending = grid.getGridItems()
+      .map(measureItem)
+      .filter((p): p is PendingResize => p !== null)
+    pending.forEach(applyResize)
+    // Каскад в родителя нужен, только если высота действительно изменилась
+    if (pending.length && options.onContentResize) {
+      // Notify parent grid to re-measure after nested changes are painted
       if (parentResizeFrame) cancelAnimationFrame(parentResizeFrame)
       parentResizeFrame = requestAnimationFrame(() => {
         parentResizeFrame = null
@@ -106,19 +124,26 @@ export function useGridstack(
   }
 
   async function init() {
-    if (!containerRef.value || grid) return
+    if (!containerRef.value || grid || initStarted) return
+    initStarted = true
 
-    await import('gridstack/dist/gridstack.min.css')
-    const { GridStack } = await import('gridstack')
+    let GridStack: typeof import('gridstack').GridStack
+    try {
+      await import('gridstack/dist/gridstack.min.css')
+      ;({ GridStack } = await import('gridstack'))
+    } finally {
+      // Дальше grid выставляется синхронно; сброс здесь оставляет возможность ретрая после ошибки
+      initStarted = false
+    }
 
     if (!containerRef.value) return
 
     const editable = isRef(options.editable) ? options.editable.value : options.editable
 
-    grid = GridStack.init({
+    const created = GridStack.init({
       column: 12,
       cellHeight: 10,
-      float: false,
+      mode: 'top',
       animate: true,
       margin: '2px',
       sizeToContent: true,
@@ -126,6 +151,8 @@ export function useGridstack(
       draggable: { handle: '.box-drag-handle' },
       staticGrid: !editable
     }, containerRef.value)
+    if (!created) return
+    grid = created
 
     grid.on('change', (_event: Event, nodes: GridStackNode[]) => {
       if (!nodes || !options.onPositionsChanged) return
@@ -173,6 +200,12 @@ export function useGridstack(
 
         m.removedNodes.forEach(node => {
           if (!(node instanceof HTMLElement) || !node.getAttribute('gs-id')) return
+          // gridstack 14 переставляет DOM-узлы под порядок раскладки: это remove+add,
+          // а не удаление — иначе removeWidget → makeWidget зацикливают страницу
+          if (node.parentElement === containerRef.value) return
+          // Иначе observer держит ссылку на child удалённого блока
+          const removedChild = node.querySelector('.grid-stack-item-content')?.firstElementChild
+          if (removedChild) resizeObserver?.unobserve(removedChild)
           if (grid && (node as any).gridstackNode) grid.removeWidget(node, false)
         })
 
@@ -191,12 +224,10 @@ export function useGridstack(
       subtree: false
     })
 
-    isReady.value = true
-
     // Force initial resize — sizeToContent doesn't always trigger from HTML.
     // Multiple passes needed: nested async components mount after the first tick.
     nextTick(resizeAllToContent)
-    setTimeout(resizeAllToContent, 200)
+    initialResizeTimer = setTimeout(resizeAllToContent, 200)
   }
 
   watch(containerRef, (el) => {
@@ -212,23 +243,18 @@ export function useGridstack(
     })
   }
 
-  function makeWidget(el: HTMLElement) {
-    if (!grid) return
-    grid.makeWidget(el)
-  }
-
   function removeWidget(el: HTMLElement) {
     if (!grid) return
     grid.removeWidget(el, false)
   }
 
-  function resizeToContent(el: HTMLElement) {
-    resizeItemToContent(el)
-  }
-
   onMounted(() => nextTick(() => init()))
 
   onBeforeUnmount(() => {
+    if (initialResizeTimer) {
+      clearTimeout(initialResizeTimer)
+      initialResizeTimer = null
+    }
     if (resizeFrame) {
       cancelAnimationFrame(resizeFrame)
       resizeFrame = null
@@ -244,16 +270,13 @@ export function useGridstack(
     if (grid) {
       try {
         grid.destroy(false)
-      } catch { /* gridstack v12 may throw during destroy when nodes are already partially cleaned */ }
+      } catch { /* gridstack may throw during destroy when nodes are already partially cleaned */ }
       grid = null
     }
   })
 
   return {
-    isReady,
-    makeWidget,
     removeWidget,
-    resizeToContent,
     resizeAllToContent
   }
 }

@@ -1,13 +1,13 @@
 # nuxt-block-editor
 
-Nuxt 4 модуль — блочный редактор контента с drag-and-drop сеткой (gridstack.js v12).
+Nuxt 4 модуль — блочный редактор контента с drag-and-drop сеткой (gridstack.js v14).
 
 ## Стек
 
 - **Nuxt 4** + **Vue 3** (Composition API, `<script setup>`)
 - **@nuxt/ui v4** (компоненты: UButton, UInput, UTextarea, UModal, UPopover, UEditor, UColorPicker, etc.)
 - **Tailwind CSS v4**
-- **Gridstack.js v12** — сетка с drag/resize, 12 колонок
+- **Gridstack.js v14** — сетка с drag/resize, 12 колонок
 - **TipTap** (через UEditor) — rich-text редактирование
 - **Shiki** — подсветка синтаксиса (Code блок + JSON просмотр)
 - **Vitest** + happy-dom — юнит-тесты
@@ -134,7 +134,7 @@ Box<T> (abstract) — id, title, subtitle, позиция в сетке (x, y, w
 npm run dev                    # playground на localhost:3000
 
 # Тесты
-npx vitest run                 # все тесты (227)
+npx vitest run                 # все тесты (245)
 npx tsc --noEmit               # проверка типов
 
 # Один файл

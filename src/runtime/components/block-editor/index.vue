@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BoxType, Box, EditorMode } from '#block-editor'
 import { Content, collectData, insertData, findDuplicateBindingKeys, boxFactory, TemplateDataSource } from '#block-editor'
-import { provide, inject, nextTick, ref, computed, watch, toRef, onUnmounted } from 'vue'
+import { provide, inject, ref, computed, watch, toRef } from 'vue'
 import { useBlockEditor } from '../../composables/useBlockEditor'
 import { useGridstack, RESIZE_PARENT_KEY } from '../../composables/useGridstack'
 import { LOCALE_KEY, useEditorI18n, type LocaleCode } from '../../composables/useEditorI18n'
@@ -57,7 +57,7 @@ const parentResize = props.nested ? inject(RESIZE_PARENT_KEY, null) : null
 
 // Gridstack — always initialized, static in view mode
 const gridRef = ref<HTMLElement | null>(null)
-const { makeWidget, removeWidget, resizeToContent, resizeAllToContent, isReady } = useGridstack(gridRef, {
+const { removeWidget, resizeAllToContent } = useGridstack(gridRef, {
   editable: isEditable,
   onPositionsChanged: (positions) => syncPositions(positions),
   onContentResize: parentResize ?? undefined
@@ -66,42 +66,9 @@ const { makeWidget, removeWidget, resizeToContent, resizeAllToContent, isReady }
 // Provide resize function so nested editors can trigger parent resize
 provide(RESIZE_PARENT_KEY, resizeAllToContent)
 
-// Watchers created inside event handlers are not auto-stopped on unmount
-const _pendingWatchers: (() => void)[] = []
-onUnmounted(() => {
-  _pendingWatchers.forEach(s => s())
-})
-
+// Новый .grid-stack-item регистрирует MutationObserver в useGridstack
 function handleAdd(type: BoxType) {
   addBox(type)
-  if (isEditable.value) {
-    const newBox = content.value.boxes[content.value.boxes.length - 1]
-    if (!newBox) return
-    const tryMakeWidget = () => {
-      if (!gridRef.value) return
-      const el = gridRef.value.querySelector(`[gs-id="${newBox.id}"]`) as HTMLElement
-      if (el && !(el as any).gridstackNode) {
-        // Let gridstack find the correct position — model h values may be
-        // stale (sizeToContent changes them outside our sync flow).
-        el.setAttribute('gs-auto-position', 'true')
-        makeWidget(el)
-        nextTick(() => resizeToContent(el))
-      }
-    }
-    if (isReady.value) {
-      nextTick(tryMakeWidget)
-    } else {
-      const stop = watch(isReady, (ready) => {
-        if (ready) {
-          nextTick(tryMakeWidget)
-          stop()
-          const idx = _pendingWatchers.indexOf(stop)
-          if (idx >= 0) _pendingWatchers.splice(idx, 1)
-        }
-      })
-      _pendingWatchers.push(stop)
-    }
-  }
 }
 
 function handleRemove(id: string) {

@@ -18,7 +18,7 @@ Nuxt 4 модуль — блочный редактор контента с drag
 - **Nuxt 4** + **Vue 3** (Composition API, `<script setup>`)
 - **@nuxt/ui v4** — UI-компоненты
 - **Tailwind CSS v4**
-- **Gridstack.js v12** — сетка с drag/resize
+- **Gridstack.js v14** — сетка с drag/resize
 - **TipTap** (через UEditor) — rich-text
 - **Shiki** — подсветка синтаксиса
 - **Konva** — Canvas-рисование

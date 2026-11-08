@@ -2,7 +2,7 @@
 import { Content, boxFactory, type BoxType, type EditorMode, collectData, findDuplicateBindingKeys } from '#block-editor'
 import { LOCALE_KEY, type LocaleCode } from '../src/runtime/composables/useEditorI18n'
 import { DEMO_BOXES, DEMO_TEMPLATE_DATA } from './demo-content'
-import { createHighlighter, type Highlighter } from 'shiki'
+import { useShiki } from '../src/runtime/composables/useShiki'
 import { shallowRef, ref, computed, watch, onMounted, provide, triggerRef } from 'vue'
 
 function buildDemoContent(): Content {
@@ -25,7 +25,6 @@ const colorMode = useColorMode()
 
 // JSON content viewer
 const jsonContent = computed(() => JSON.stringify(content.value.toJSON(), null, 2))
-const highlighter = ref<Highlighter>()
 const highlightedJson = ref('')
 
 // Data panel
@@ -51,23 +50,21 @@ const dataParsed = computed(() => {
 const templateData = computed(() => dataParsed.value.data)
 const dataError = computed(() => dataParsed.value.error)
 
-async function ensureHighlighter() {
-  if (!highlighter.value) {
-    highlighter.value = await createHighlighter({
-      themes: ['github-dark'],
-      langs: ['json']
-    })
-  }
-  return highlighter.value
-}
+const { highlight } = useShiki()
 
 async function highlightAll() {
-  const hl = await ensureHighlighter()
-  highlightedJson.value = hl.codeToHtml(jsonContent.value, { lang: 'json', theme: 'github-dark' })
-  highlightedData.value = hl.codeToHtml(dataJson.value, { lang: 'json', theme: 'github-dark' })
+  try {
+    const [json, data] = await Promise.all([highlight(jsonContent.value, 'json'), highlight(dataJson.value, 'json')])
+    highlightedJson.value = json
+    highlightedData.value = data
+  }
+  catch {
+    // Воркер упал — превью останется без подсветки
+  }
 }
 
-watch(content, () => highlightAll(), { deep: true })
+// content — shallowRef: обновляется присваиванием/triggerRef, глубокий обход графа не нужен
+watch(content, () => highlightAll())
 onMounted(() => highlightAll())
 
 function loadDemo() {
@@ -161,8 +158,8 @@ function handleInsert() {
       <!-- Main content: 2 columns -->
       <div class="flex-1 flex min-h-0">
         <!-- Left: Editor -->
-        <div class="flex-1 min-w-0 overflow-auto p-4">
-          <div class="rounded-lg border border-default bg-default p-4 min-h-full">
+        <UScrollArea shadow class="flex-1 min-w-0" :ui="{ viewport: 'p-4 min-h-full' }">
+          <div class="flex-1 rounded-lg border border-default bg-default p-4">
             <BlockEditor
               ref="editorRef"
               :content="content"
@@ -172,10 +169,10 @@ function handleInsert() {
               @update:content="handleContentUpdate"
             />
           </div>
-        </div>
+        </UScrollArea>
 
         <!-- Right: JSON + Data -->
-        <div class="w-120 shrink-0 border-l border-default flex flex-col min-h-0 overflow-auto">
+        <UScrollArea shadow class="w-120 shrink-0 border-l border-default" :ui="{ viewport: 'min-h-full' }">
           <!-- JSON Card -->
           <div class="border-b border-default p-4">
             <div class="flex items-center gap-2 mb-2">
@@ -245,7 +242,7 @@ function handleInsert() {
             />
             <p v-if="dataError" class="text-xs text-error mt-1">{{ dataError }}</p>
           </div>
-        </div>
+        </UScrollArea>
       </div>
     </div>
   </UApp>

@@ -3,7 +3,7 @@ import { BoxCode } from '#block-editor'
 import type { Box, EditorMode } from '#block-editor'
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useBoxModel } from '../../../../composables/useBoxModel'
-import { createHighlighter, type Highlighter } from 'shiki'
+import { useShiki } from '../../../../composables/useShiki'
 
 const props = defineProps<{
   box: BoxCode
@@ -31,48 +31,31 @@ import('shiki/langs').then(mod => {
   languageOptions.value = names.map((n: string) => ({ label: n, value: n }))
 })
 
-// Shiki highlighter with lazy language loading
-const highlighter = ref<Highlighter>()
+const { highlight } = useShiki()
 const highlightedHtml = ref('')
 
-onMounted(async () => {
-  highlighter.value = await createHighlighter({
-    themes: ['github-dark'],
-    langs: [language.value]
-  })
-  updateHighlight()
-})
-
-onUnmounted(() => {
-  highlighter.value?.dispose()
-  highlighter.value = undefined
-})
-
-async function ensureLanguageLoaded(lang: string) {
-  if (!highlighter.value) return
-  const loaded = highlighter.value.getLoadedLanguages()
-  if (!loaded.includes(lang)) {
-    await highlighter.value.loadLanguage(lang as any)
-  }
-}
+// Устаревший ответ (пользователь успел набрать дальше) не должен перетирать свежий
+let requestId = 0
 
 async function updateHighlight() {
+  const id = ++requestId
   const code = localValue.value || ''
-  if (!code || !highlighter.value) {
-    highlightedHtml.value = escapeHtml(code)
+  if (!code) {
+    highlightedHtml.value = ''
     return
   }
-  await ensureLanguageLoaded(language.value)
-  const html = highlighter.value.codeToHtml(code, {
-    lang: language.value,
-    theme: 'github-dark'
-  })
+  // Сбой воркера → показываем текст без подсветки, а не unhandled rejection
+  const html = await highlight(code, language.value).catch(() => '')
+  if (id !== requestId || _unmounted) return
   // Extract inner content from shiki's <pre><code>...</code></pre> wrapper
   const match = html.match(/<code[^>]*>([\s\S]*)<\/code>/)
   highlightedHtml.value = match ? match[1] : escapeHtml(code)
 }
 
+// Без дебаунса: текст в textarea прозрачный, виден только через оверлей — задержка прячет ввод.
+// Воркер вне main thread, устаревшие ответы отсекает requestId.
 watch([localValue, language], () => updateHighlight())
+onMounted(updateHighlight)
 
 function escapeHtml(text: string): string {
   return text

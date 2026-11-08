@@ -16,7 +16,7 @@
 приложение — `playground/`, оно подключает модуль относительным путём `'../src/module.ts'`.
 
 Стек: Nuxt 4 + Vue 3 `<script setup>` + TypeScript strict, @nuxt/ui v4 (включая `UEditor` на
-TipTap v3), Tailwind CSS v4, gridstack.js v12, Konva (Canvas-блок), Shiki (подсветка кода),
+TipTap v3), Tailwind CSS v4, gridstack.js v14, Konva (Canvas-блок), Shiki (подсветка кода),
 mustache (шаблоны в тексте), Vitest + happy-dom.
 
 Два слоя:
@@ -30,7 +30,7 @@ mustache (шаблоны в тексте), Vitest + happy-dom.
 ## 2. Команды
 
 ```bash
-npx vitest run                      # ЕДИНСТВЕННЫЙ надёжный гейт: 12 файлов / 227 тестов
+npx vitest run                      # ЕДИНСТВЕННЫЙ надёжный гейт: 15 файлов / 245 тестов
 npx vitest run tests/model/Content.test.ts   # один файл
 npm run dev                         # playground на localhost:3000 (nuxt dev playground)
 npx tsc --noEmit                    # второй гейт: должен быть пуст
@@ -365,6 +365,9 @@ read-only/превью, но не оба.
 - ResizeObserver вешается на **ребёнка** `.grid-stack-item-content`, а не на него самого.
 - MutationObserver идёт с `subtree: false` и фильтрует добавленные узлы по атрибуту `gs-id` —
   без этого фильтра плейсхолдер самого gridstack (тот же класс) регистрируется как виджет.
+- В `removedNodes` пропускаются узлы, всё ещё лежащие в контейнере: gridstack 14 переставляет
+  DOM под порядок раскладки (remove+add). Без проверки `removeWidget` → `makeWidget` зацикливают
+  страницу при любом drag, меняющем порядок блоков.
 - `gs-size-to-content` привязан к `box.name_type !== 'CANVAS'` **строковым литералом**, а не через
   `BOX_TYPES.CANVAS`. Новый блок с фиксированной высотой надо добавлять в это выражение вручную.
 - Селектор `.box-drag-handle` продублирован в `Container.vue` и в опциях gridstack. Переименование

@@ -1,4 +1,5 @@
 import { defineNuxtModule, createResolver, addComponentsDir, addImportsDir } from '@nuxt/kit'
+import { OPTIMIZE_INCLUDE, OPTIMIZE_EXCLUDE } from './optimize-deps'
 
 export default defineNuxtModule({
   meta: {
@@ -12,24 +13,17 @@ export default defineNuxtModule({
     // #block-editor alias → model directory
     nuxt.options.alias['#block-editor'] = resolve('./model')
 
-    // Предотвращаем дублирование prosemirror-классов (DecorationSet и др.)
-    // @tiptap/extension-table исключаем из pre-bundling чтобы Vite не инлайнил prosemirror-view
+    // Списки и причины — в optimize-deps.ts
     nuxt.options.vite ??= {}
     nuxt.options.vite.optimizeDeps ??= {}
     nuxt.options.vite.optimizeDeps.exclude ??= []
-    ;(nuxt.options.vite.optimizeDeps.exclude as string[]).push(
-      '@tiptap/extension-table',
-      '@tiptap/extension-image',
-      '@tiptap/extension-list'
-    )
     nuxt.options.vite.optimizeDeps.include ??= []
-    ;(nuxt.options.vite.optimizeDeps.include as string[]).push(
-      'prosemirror-view',
-      'prosemirror-state',
-      'prosemirror-model',
-      'prosemirror-tables',
-      'prosemirror-transform'
-    )
+    ;(nuxt.options.vite.optimizeDeps.exclude as string[]).push(...OPTIMIZE_EXCLUDE)
+    ;(nuxt.options.vite.optimizeDeps.include as string[]).push(...OPTIMIZE_INCLUDE)
+
+    // Дефолтный iife склеивает shiki-воркер со всеми грамматиками (~9 МБ); es сохраняет ленивые чанки
+    nuxt.options.vite.worker ??= {}
+    nuxt.options.vite.worker.format ??= 'es'
 
     // Auto-register components with BlockEditor prefix
     addComponentsDir({

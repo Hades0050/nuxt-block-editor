@@ -70,7 +70,7 @@ function handleBoxUpdate(updates: Partial<Box>) {
 <template>
   <div :class="isEditable ? 'group/block rounded-lg border border-default hover:border-accented transition-colors' : ''">
     <!-- Top toolbar (edit mode only) -->
-    <div v-if="isEditable" class="flex items-center gap-1 px-2 py-1 border-b border-default bg-elevated/50">
+    <div v-if="isEditable" class="flex items-center gap-1 px-2 py-1 border-b border-default bg-elevated/50 rounded-t-lg">
       <UTooltip :text="t('container.drag')">
         <div class="box-drag-handle cursor-grab p-1 rounded hover:bg-elevated flex items-center justify-center">
           <UIcon name="i-lucide-grip-vertical" class="size-4 text-muted" />

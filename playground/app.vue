@@ -92,7 +92,7 @@ function handleInsert() {
   <UApp>
     <div class="h-screen flex flex-col">
       <!-- Toolbar -->
-      <div class="shrink-0 border-b border-default px-4 py-3 flex items-center justify-between">
+      <div class="glass shrink-0 border-b px-4 py-3 flex items-center justify-between">
         <h1 class="text-lg font-bold">Block Editor Playground</h1>
         <div class="flex items-center gap-2">
           <BlockEditorBlockAdder
@@ -159,7 +159,7 @@ function handleInsert() {
       <div class="flex-1 flex min-h-0">
         <!-- Left: Editor -->
         <UScrollArea shadow class="flex-1 min-w-0" :ui="{ viewport: 'p-4 min-h-full' }">
-          <div class="flex-1 rounded-lg border border-default bg-default p-4">
+          <div class="glass flex-1 rounded-lg border p-4">
             <BlockEditor
               ref="editorRef"
               :content="content"
@@ -172,7 +172,7 @@ function handleInsert() {
         </UScrollArea>
 
         <!-- Right: JSON + Data -->
-        <UScrollArea shadow class="w-120 shrink-0 border-l border-default" :ui="{ viewport: 'min-h-full' }">
+        <UScrollArea shadow class="glass w-120 shrink-0 border-l" :ui="{ viewport: 'min-h-full' }">
           <!-- JSON Card -->
           <div class="border-b border-default p-4">
             <div class="flex items-center gap-2 mb-2">

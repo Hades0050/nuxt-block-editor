@@ -25,6 +25,10 @@ const activeTabContent = computed(() =>
   props.box.findTab(activeTab.value)
 )
 
+const tabItems = computed(() =>
+  props.box.value.map(tab => ({ label: tab.label, value: tab.id }))
+)
+
 function addTab() {
   const tab = props.box.addTab()
   activeTab.value = tab.id
@@ -39,26 +43,23 @@ function removeTab(tabId: string) {
 <template>
   <div class="flex flex-col">
     <!-- Tab headers -->
-    <div class="shrink-0 space-y-2 pb-2 border-b border-default bg-default">
-      <div class="flex items-center gap-1 flex-wrap">
-        <UButton
-          v-for="tab in box.value"
-          :key="tab.id"
-          :label="tab.label"
-          :color="activeTab === tab.id ? 'primary' : 'neutral'"
-          :variant="activeTab === tab.id ? 'solid' : 'ghost'"
-          size="sm"
-          @click="activeTab = tab.id"
-        />
-      </div>
+    <div class="shrink-0 flex items-center gap-3 border-b border-default">
+      <UTabs
+        v-model="activeTab"
+        :items="tabItems"
+        :content="false"
+        variant="link"
+        size="sm"
+        class="flex-1 min-w-0"
+      />
 
       <!-- Tab controls -->
-      <div v-if="isEditable && activeTabContent" class="flex items-center gap-2">
+      <div v-if="isEditable && activeTabContent" class="shrink-0 flex items-center gap-1 pb-1">
         <UInput
           :model-value="activeTabContent.label"
           :placeholder="t('tabs.labelPlaceholder')"
-          size="sm"
-          class="w-40"
+          size="xs"
+          class="w-36"
           @update:model-value="(v: string) => box.updateTabLabel(activeTab, v)"
         />
         <UTooltip :text="t('tabs.deleteTab')">

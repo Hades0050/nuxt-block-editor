@@ -44,3 +44,52 @@
     scrollbar-color: var(--ui-border-accented) transparent;
   }
 }
+
+/* Прозрачный материал (как в sandbox): обои на fixed-псевдоэлементе, панели — полупрозрачные
+   поверх них. Роли --ui-bg* не трогаем: их читают поповеры и модалки, им нужен сплошной фон. */
+:root {
+  --wall-base: #dde3ee;
+  --wall-a: #93b4ff;
+  --wall-b: #b7a6ff;
+  --wall-c: rgb(255 255 255 / 0.8);
+  --wall-opacity: 0.9;
+  --glass-bg: rgb(255 255 255 / 0.3);
+  --glass-border: rgb(0 0 0 / 0.1);
+}
+
+.dark {
+  --wall-base: #08090b;
+  --wall-a: #1d3a8a;
+  --wall-b: #3b2a7a;
+  --wall-c: rgb(150 140 130 / 0.5);
+  --wall-opacity: 0.6;
+  --glass-bg: rgb(8 9 11 / 0.4);
+  --glass-border: rgb(255 255 255 / 0.085);
+}
+
+html {
+  background: var(--wall-base);
+}
+
+body {
+  background: transparent;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--wall-opacity);
+  background:
+    radial-gradient(55% 60% at 10% 0%, var(--wall-a), transparent 70%),
+    radial-gradient(50% 55% at 100% 100%, var(--wall-b), transparent 70%),
+    radial-gradient(40% 40% at 70% 20%, var(--wall-c), transparent 70%);
+}
+
+.glass {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(12px);
+}

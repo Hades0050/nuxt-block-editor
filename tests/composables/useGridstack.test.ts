@@ -163,23 +163,14 @@ describe('useGridstack resizeAllToContent', () => {
     expect(lastRead).toBeLessThan(firstWrite)
   })
 
-  it('applies the computed height and restores sizeToContent around update', async () => {
+  it('applies the computed height via grid.update', async () => {
     const a = createItem('a', 100, cellsFor(100))
     const { api, fake } = await mountGrid([a])
-    const node = (a.item as any).gridstackNode
-    node.sizeToContent = true
-    let seenDuringUpdate: unknown
-    fake.update.mockImplementation((_el: HTMLElement, opts: { h: number }) => {
-      seenDuringUpdate = node.sizeToContent
-      node.h = opts.h
-    })
     a.state.childH = 300
 
     api.resizeAllToContent()
 
     expect(fake.update).toHaveBeenLastCalledWith(a.item, { h: cellsFor(300) })
-    expect(seenDuringUpdate).toBe(false)
-    expect(node.sizeToContent).toBe(true)
   })
 
   it('skips items being dragged or resized', async () => {
@@ -279,5 +270,15 @@ describe('useGridstack removed nodes', () => {
 
     expect(GridStack.init).toHaveBeenCalledTimes(1)
     expect(resizeObservers).toHaveLength(1)
+  })
+
+  it('does not enable gridstack built-in sizeToContent, which shrinks items with a wrong measurement', async () => {
+    const { GridStack } = await import('gridstack')
+    vi.mocked(GridStack.init).mockClear()
+
+    await mountGrid([createItem('a', 100, cellsFor(100))])
+
+    const options = vi.mocked(GridStack.init).mock.calls[0]![0]
+    expect(options?.sizeToContent).toBeFalsy()
   })
 })

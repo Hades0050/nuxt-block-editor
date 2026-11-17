@@ -45,9 +45,9 @@ export function useGridstack(
    * child's getBoundingClientRect().height returns the constrained height, not the
    * natural one.
    *
-   * Key insight: calling grid.update() triggers gridstack's internal
-   * resizeToContentCheck() which re-runs the broken measurement and overrides
-   * our correct height. We temporarily disable node.sizeToContent to prevent this.
+   * Поэтому встроенный sizeToContent выключен и в init, и на items: gridstack зовёт его
+   * из _updateContainerHeight и сажает item на заниженную высоту (child при этом не меняет
+   * размер, ResizeObserver молчит — и высота остаётся неверной).
    *
    * Только чтение: возвращает новую высоту в ячейках или null, если менять нечего.
    * Чтения и записи разнесены по фазам, чтобы update не вызывал forced reflow на следующем item.
@@ -81,14 +81,8 @@ export function useGridstack(
     return h !== node.h ? { el, node, h } : null
   }
 
-  function applyResize({ el, node, h }: PendingResize) {
-    // Temporarily disable sizeToContent so gridstack's internal
-    // resizeToContentCheck (triggered by update()) doesn't override
-    // our offsetHeight-based measurement with its own broken one
-    const origSTC = node.sizeToContent
-    node.sizeToContent = false
+  function applyResize({ el, h }: PendingResize) {
     grid!.update(el, { h })
-    node.sizeToContent = origSTC
   }
 
   function resizeAllToContent() {
@@ -146,7 +140,6 @@ export function useGridstack(
       mode: 'top',
       animate: true,
       margin: '2px',
-      sizeToContent: true,
       resizable: { handles: 'e' },
       draggable: { handle: '.box-drag-handle' },
       staticGrid: !editable
@@ -167,7 +160,7 @@ export function useGridstack(
     })
 
     // Sync x/y/w from gridstack's initial layout, but preserve model's h values.
-    // sizeToContent during init computes wrong heights (content not rendered yet).
+    // Раскладка при init считается до рендера контента — высоты в ней неверны.
     // ResizeObserver will correct heights shortly after.
     if (options.onPositionsChanged && grid.engine.nodes.length) {
       const positions = grid.engine.nodes.map(n => ({
@@ -224,7 +217,7 @@ export function useGridstack(
       subtree: false
     })
 
-    // Force initial resize — sizeToContent doesn't always trigger from HTML.
+    // Force initial resize.
     // Multiple passes needed: nested async components mount after the first tick.
     nextTick(resizeAllToContent)
     initialResizeTimer = setTimeout(resizeAllToContent, 200)

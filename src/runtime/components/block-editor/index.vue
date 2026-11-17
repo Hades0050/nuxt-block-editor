@@ -120,7 +120,6 @@ defineExpose({
           :gs-y="box.y"
           :gs-min-w="box.minW"
           :gs-min-h="box.minH"
-          :gs-size-to-content="box.name_type !== 'CANVAS'"
         >
           <div class="grid-stack-item-content">
             <BlockEditorContainer
